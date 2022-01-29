@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import genfromtxt
+import os
 
 
 def get_vertices(
@@ -7,8 +8,14 @@ def get_vertices(
     faces_file: str,
     vertices_file: str
 ) -> np.array:
-    faces = genfromtxt(f'formations/{formation}/{faces_file}.csv', delimiter=',')
-    _vertices = genfromtxt(f'formations/{formation}/{vertices_file}.csv', delimiter=',')
+    faces = genfromtxt(
+        f'{os.path.dirname(__file__)}/formations/{formation}/{faces_file}.csv',
+        delimiter=','
+    )
+    _vertices = genfromtxt(
+        f'{os.path.dirname(__file__)}/formations/{formation}/{vertices_file}.csv',
+        delimiter=','
+    )
 
     vertices = np.delete(_vertices, [2], 1)
 
@@ -23,4 +30,7 @@ def get_vertices(
 
 
 def get_colors(formation: str) -> np.array:
-    return genfromtxt(f'formations/{formation}/colours.csv', delimiter=',')
+    return genfromtxt(
+        f'{os.path.dirname(__file__)}/formations/{formation}/colours.csv',
+        delimiter=','
+    )

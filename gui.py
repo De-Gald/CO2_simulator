@@ -1,16 +1,8 @@
-from pathlib import Path
 from tkinter import Tk, Canvas, Entry, Button
 import tkinter as tk
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-# from modules.co2lab.examples.explore_simulation import explore_simulation
-
 import matplotlib.pyplot as plt
-
-# from modules.co2lab.reinforcement_learning.basic_policy import run_basic_policy
-# from modules.co2lab.reinforcement_learning.nn_policy import run_nn_policy
-
 from matplotlib import cm
 from matplotlib.collections import PolyCollection
 
@@ -23,23 +15,18 @@ FORMATIONS = [
     'johansenfm', 'krossfjordfm', 'pliocenesand',
     'sandnesfm', 'skadefm', 'sognefjordfm', 'statfjordfm',
     'ulafm', 'utsirafm', 'stofm', 'nordmelafm', 'tubaenfm',
-    'bjarmelandfm', 'arefm', 'garnfm', 'ilefm', 'tiljefm']
-
-CSV_FILE = 'centroids'
-
-OUTPUT_PATH = Path(__file__).parent
-ASSETS_PATH = OUTPUT_PATH / Path("./assets")
-
-
-def relative_to_assets(path: str) -> Path:
-    return ASSETS_PATH / Path(path)
+    'bjarmelandfm', 'arefm', 'garnfm', 'ilefm', 'tiljefm'
+]
 
 
 class GUI:
-    window = Tk()
-    window.title('CO2 storage simulator')
-    scatter = None
-    formation = 8
+    def __init__(self):
+        self.window = Tk()
+        self.window.title('CO2 storage simulator')
+        self.formation = 8
+        self.scatter = None
+        self.well_x = 0
+        self.well_y = 0
 
     def run(self):
         self.window.geometry("755x519")
@@ -58,7 +45,7 @@ class GUI:
 
         canvas = Canvas(
             self.window,
-            bg="#3A7FF6",
+            bg="#ffffff",
             height=719,
             width=962,
             bd=0,
@@ -236,13 +223,15 @@ class GUI:
             font=("Montserrat Regular", 15 * -1)
         )
 
-        figure = plot_formation(
+        figure, _ = plot_formation(
             FORMATIONS[self.formation],
+            self,
+            set_callbacks=True,
             use_trapping=True
         )
 
-        GUI.scatter = FigureCanvasTkAgg(figure, GUI.window)
-        GUI.scatter.get_tk_widget().pack(side=tk.LEFT, fill=tk.Y)
+        self.scatter = FigureCanvasTkAgg(figure, self.window)
+        self.scatter.get_tk_widget().pack(side=tk.LEFT, fill=tk.Y)
 
         self.window.resizable(False, False)
         self.window.mainloop()
@@ -250,16 +239,16 @@ class GUI:
 
 def plot_formation(
     formation: str,
-    well_x=0,
-    well_y=0,
+    gui=None,
+    set_callbacks=False,
     show_well=False,
     use_trapping=False
-) -> plt.Figure:
+) -> [plt.Figure, plt.axis]:
     vertices_formation = get_vertices(formation, 'faces', 'vertices')
     colors_formation = get_colors(formation)
 
-    fig = plt.Figure(dpi=93)
-    ax = fig.add_subplot()
+    fig, ax = plt.subplots()
+    fig.set_dpi(93)
 
     face_colors = [
         cm.viridis(x) for x in
@@ -286,33 +275,43 @@ def plot_formation(
         )
         ax.add_collection(trapping_collection)
 
-    ax.autoscale_view()
     if show_well:
-        ax.scatter(well_x, well_y, c='k', marker='x')
-        ax.annotate('Well', (well_x, well_y), textcoords="offset points", xytext=(0, 3))
+        ax.scatter(gui.well_x, gui.well_y, c='k', marker='x')
+        ax.annotate('Well', (gui.well_x, gui.well_y), textcoords="offset points", xytext=(0, 3))
 
-    fig.canvas.callbacks.connect('pick_event', lambda event: _on_click(event, formation))
+    if set_callbacks:
+        fig.canvas.callbacks.connect(
+            'pick_event',
+            lambda event: _on_click(event, gui, formation)
+        )
 
-    return fig
+    ax.autoscale_view()
+
+    return fig, ax
 
 
-def _on_click(event, formation):
+def _on_click(
+    event,
+    gui: GUI,
+    formation: str
+) -> None:
     x_mouse, y_mouse = event.mouseevent.xdata, event.mouseevent.ydata
-    GUI.well_x = x_mouse
-    GUI.well_y = y_mouse
+    gui.well_x = x_mouse
+    gui.well_y = y_mouse
 
-    figure = plot_formation(
+    figure, _ = plot_formation(
         formation,
-        x_mouse,
-        y_mouse,
+        gui,
+        set_callbacks=True,
         show_well=True,
         use_trapping=True
     )
 
-    GUI.scatter.get_tk_widget().destroy()
-    GUI.scatter = FigureCanvasTkAgg(figure, GUI.window)
-    GUI.scatter.get_tk_widget().pack(side=tk.LEFT, fill=tk.Y)
+    gui.scatter.get_tk_widget().destroy()
+    gui.scatter = FigureCanvasTkAgg(figure, gui.window)
+    gui.scatter.get_tk_widget().pack(side=tk.LEFT, fill=tk.Y)
 
 
-gui = GUI()
-gui.run()
+if __name__ == '__main__':
+    gui = GUI()
+    gui.run()
