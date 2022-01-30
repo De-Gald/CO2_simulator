@@ -1,5 +1,5 @@
 function visualSimulation(opt)
-   reports = get_simulation_results(opt);
+   [masses, t, sol, W] = get_simulation_results(opt);
 
    h2 = figure; plot(1); ax = get(h2, 'currentaxes');
 

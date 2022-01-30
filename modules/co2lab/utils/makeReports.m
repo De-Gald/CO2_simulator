@@ -1,4 +1,4 @@
-function reports = makeReports(Gt, states, rock, fluid, schedule, residual, traps, dh)
+function [masses, t, sol, W] = makeReports(Gt, states, rock, fluid, schedule, residual, traps, dh)
 %
 % This function does intermediate processing of simulation data in order to
 % generate inventory plots using 'plotTrappingDistribution'.
@@ -65,38 +65,38 @@ along with MRST.  If not, see <http://www.gnu.org/licenses/>.
          tot_inj = Gt.cells.volumes .* rock.poro .* ntg .* (1-fluid.res_water) ...
              .* h .* fluid.rhoG(states{1}.pressure);
          tot_inj = sum(tot_inj);
-         reports(i).t         = 0; %#ok
-         reports(i).W         = []; %#ok
+         t{i}         = 0; %#ok
+         W{i}         = []; %#ok
       else
-         reports(i).t = sum(schedule.step.val(1:i-1)); %#ok
-         reports(i).W = schedule.control(schedule.step.control(i-1)).W; %#ok
+         t{i} = sum(schedule.step.val(1:i-1)); %#ok
+         W{i} = schedule.control(schedule.step.control(i-1)).W; %#ok
          
-         assert(all(cellfun(@(x) strcmpi(x, 'rate'), {reports(i).W.type})));
-         tot_inj = tot_inj + sum([reports(i).W.val]) * schedule.step.val(i-1) * fluid.rhoGS;
+         assert(all(cellfun(@(x) strcmpi(x, 'rate'), {W{i}.type})));
+         tot_inj = tot_inj + sum([W{i}.val]) * schedule.step.val(i-1) * fluid.rhoGS;
       end
       
-      reports(i).sol       = states{i}; %#ok
-      reports(i).sol.h     = h; %#ok
-      reports(i).sol.h_max = h_max; %#ok
+      sol{i}       = states{i}; %#ok
+      sol{i}.h     = h; %#ok
+      sol{i}.h_max = h_max; %#ok
       
       rs = 0;
       if isfield(states{i}, 'rs')
          rs = states{i}.rs;
       end
       
-      reports(i).masses    = massTrappingDistributionVEADI(Gt                   , ...
-                                                        reports(i).sol.pressure , ...
-                                                        reports(i).sol.s(:,2)   , ...
-                                                        reports(i).sol.s(:,1)   , ...
-                                                        reports(i).sol.h        , ...
-                                                        reports(i).sol.h_max    , ...
+      masses{i}    = massTrappingDistributionVEADI(Gt                   , ...
+                                                        sol{i}.pressure , ...
+                                                        sol{i}.s(:,2)   , ...
+                                                        sol{i}.s(:,1)   , ...
+                                                        sol{i}.h        , ...
+                                                        sol{i}.h_max    , ...
                                                         rock                    , ...
                                                         fluid                   , ...
                                                         traps                   , ...
                                                         dh                      , ...
                                                         'rs', rs); %#ok
-      leaked = tot_inj - sum(reports(i).masses);
-      reports(i).masses = [reports(i).masses, leaked]; %#ok
+      leaked = tot_inj - sum(masses{i});
+      masses{i} = [masses{i}, leaked]; %#ok
    end
    
 end
