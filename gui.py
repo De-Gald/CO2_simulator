@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.collections import PolyCollection
 
+from simulation.explore_simulation import explore_simulation
 from utils import get_vertices, get_colors
 
 COLOUR_INTENSITY = 0.85
@@ -67,7 +68,10 @@ class GUI:
             borderwidth=0,
             highlightthickness=1,
             highlightbackground='#3A7FF6',
-            command=lambda: print('HERE!!!')
+            command=lambda: explore_simulation(
+                [(self.well_x, self.well_y)],
+                formation=FORMATIONS[self.formation]
+            )
         )
         button_1.place(
             x=471.0,
@@ -296,8 +300,8 @@ def _on_click(
     formation: str
 ) -> None:
     x_mouse, y_mouse = event.mouseevent.xdata, event.mouseevent.ydata
-    gui.well_x = x_mouse
-    gui.well_y = y_mouse
+    gui.well_x = float(x_mouse)
+    gui.well_y = float(y_mouse)
 
     figure, _ = plot_formation(
         formation,
