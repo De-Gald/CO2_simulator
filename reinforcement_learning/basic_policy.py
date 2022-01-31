@@ -4,8 +4,8 @@ import numpy as np
 import matlab.engine
 from matplotlib import pyplot as plt
 
-from gui import FORMATIONS, plot_formation
-from reinforcement_learning.dynamic_plotting import plot_well_locations
+from simulation.gui import FORMATIONS, plot_formation
+from plotting.dynamic_plotting import plot_well_locations
 from simulation.explore_simulation import explore_simulation
 from utils import get_vertices
 
@@ -149,4 +149,4 @@ def _get_possible_locations(
 
 
 if __name__ == '__main__':
-    run_basic_policy(FORMATIONS[11])
+    run_basic_policy(FORMATIONS[12])

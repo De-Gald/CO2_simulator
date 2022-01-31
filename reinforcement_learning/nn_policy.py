@@ -5,14 +5,14 @@ import numpy as np
 import matlab.engine
 from typing import List
 
-from gui import FORMATIONS, plot_formation
+from simulation.gui import FORMATIONS, plot_formation
 from simulation.explore_simulation import explore_simulation
 from reinforcement_learning.basic_policy import (
     get_matlab_engine,
     get_random_centroids,
     get_rewards,
 )
-from reinforcement_learning.dynamic_plotting import plot_well_locations
+from plotting.dynamic_plotting import plot_well_locations
 from utils import get_vertices
 
 

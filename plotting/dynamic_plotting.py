@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
-
-from gui import FORMATIONS, plot_formation
+from simulation.gui import FORMATIONS, plot_formation
 
 
 def plot_well_locations(

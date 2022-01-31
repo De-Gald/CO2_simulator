@@ -4,7 +4,7 @@ import numpy as np
 from typing import Dict, List, Tuple
 from pydantic import BaseModel
 
-from simulation.plot_trapping_distribution import plot_trapping_distribution
+from plotting.plot_trapping_distribution import plot_trapping_distribution
 
 YEAR = 3600 * 24 * 365.2425
 
