@@ -102,14 +102,6 @@ def get_random_centroids(
     return random_centroids
 
 
-def get_centroids_x_y(
-    centroids: matlab.double
-) -> [List[float], List[float]]:
-    xs = [centroid[0] for centroid in centroids]
-    ys = [centroid[1] for centroid in centroids]
-    return xs, ys
-
-
 def get_matlab_engine() -> matlab.engine:
     eng = matlab.engine.start_matlab()
     eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
@@ -157,4 +149,4 @@ def _get_possible_locations(
 
 
 if __name__ == '__main__':
-    run_basic_policy(FORMATIONS[12])
+    run_basic_policy(FORMATIONS[11])
