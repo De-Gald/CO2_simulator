@@ -70,7 +70,8 @@ class GUI:
             highlightbackground='#3A7FF6',
             command=lambda: explore_simulation(
                 [(self.well_x, self.well_y)],
-                formation=FORMATIONS[self.formation]
+                formation=FORMATIONS[self.formation],
+                show_plot=True
             )
         )
         button_1.place(

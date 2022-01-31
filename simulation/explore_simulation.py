@@ -41,6 +41,7 @@ class InitialParameters(BaseModel):
 def explore_simulation(
     xy: List[any],
     formation='utsirafm',
+    show_plot=False,
     eng=None,
     **kwargs
 ) -> Dict[Tuple[float, float], np.array]:
@@ -60,12 +61,12 @@ def explore_simulation(
         masses_new, t, sol, w = eng.eval(
             'get_simulation_results(initial_parameters);', nargout=4
         )
-        masses.update({
-            xy[idx]: masses_new
-        })
 
         masses_np, t_np = _convert_to_np_arrays(masses_new, t)
-        plot_trapping_distribution(masses_np, t_np)
+
+        masses.update({
+            xy[idx]: plot_trapping_distribution(masses_np, t_np, show_plot=show_plot)
+        })
 
     return masses
 
@@ -81,4 +82,4 @@ def _convert_to_np_arrays(
 
 
 if __name__ == '__main__':
-    explore_simulation([(487000.0, 6721000.0)])
+    explore_simulation([(487000.0, 6721000.0)], show_plot=True)
