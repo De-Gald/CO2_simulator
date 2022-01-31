@@ -136,8 +136,12 @@ function [model, schedule, initState, dh] = setup_model(opt)
       
       % Load grid and rock, and assure rock values are valid
 
-      [var.Gt, var.rock2D] = getFormationTopGrid(name, opt.grid_coarsening);
+      rock2D = []; Gt = [];
+      load(['rock2D_', lower(name), '.mat']);
+      load(['Gt_', lower(name), '.mat']);
       
+      var.rock2D = rock2D; var.Gt = Gt;
+
       if any(isnan(var.rock2D.poro))
          warning('Replacing missing porosity value with default value.');
          var.rock2D.poro = default_poro * ones(size(var.rock2D.poro));

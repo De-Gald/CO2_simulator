@@ -4,11 +4,13 @@ import numpy as np
 from typing import Dict, List, Tuple
 from pydantic import BaseModel
 
+from simulation.plot_trapping_distribution import plot_trapping_distribution
+
 YEAR = 3600 * 24 * 365.2425
 
 
 class InitialParameters(BaseModel):
-    formation: str = 'utsirafm'
+    formation: str = 'Utsirafm'
     rho_cref: float = 760.0
     grid_coarsening: float = 4.0
     seafloor_depth: float = 100.0
@@ -62,7 +64,20 @@ def explore_simulation(
             xy[idx]: masses_new
         })
 
+        masses_np, t_np = _convert_to_np_arrays(masses_new, t)
+        plot_trapping_distribution(masses_np, t_np)
+
     return masses
+
+
+def _convert_to_np_arrays(
+    masses,
+    t
+) -> (np.array, np.array):
+    t_np = np.array(t)
+    _masses_np = np.array(masses)
+    masses_np = _masses_np.reshape((len(_masses_np), len(_masses_np[0, 0])))
+    return masses_np, t_np
 
 
 if __name__ == '__main__':

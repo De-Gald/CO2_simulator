@@ -2,9 +2,9 @@ function [masses, t, sol, W] = makeReports(Gt, states, rock, fluid, schedule, re
 %
 % This function does intermediate processing of simulation data in order to
 % generate inventory plots using 'plotTrappingDistribution'.
-% 
+%
 % Currently, only rate controlled wells are supported (not pressure-controlled).
-% 
+%
 % SYNOPSIS:
 %   function reports = makeReports(Gt, states, rock, fluid, schedule, residual, traps, dh)
 %
@@ -48,10 +48,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with MRST.  If not, see <http://www.gnu.org/licenses/>.
 %}
-   
+
    assert( numel(states) == numel(schedule.step.val)+1 , ...
        'Ensure the initial state has been included in the varargin ''states''.')
-   
+
    for i = 1:numel(states)
 
       [h, h_max] = compute_plume_height(Gt, states{i}, residual(1), residual(2));
@@ -70,20 +70,20 @@ along with MRST.  If not, see <http://www.gnu.org/licenses/>.
       else
          t{i} = sum(schedule.step.val(1:i-1)); %#ok
          W{i} = schedule.control(schedule.step.control(i-1)).W; %#ok
-         
+
          assert(all(cellfun(@(x) strcmpi(x, 'rate'), {W{i}.type})));
          tot_inj = tot_inj + sum([W{i}.val]) * schedule.step.val(i-1) * fluid.rhoGS;
       end
-      
+
       sol{i}       = states{i}; %#ok
       sol{i}.h     = h; %#ok
       sol{i}.h_max = h_max; %#ok
-      
+
       rs = 0;
       if isfield(states{i}, 'rs')
          rs = states{i}.rs;
       end
-      
+
       masses{i}    = massTrappingDistributionVEADI(Gt                   , ...
                                                         sol{i}.pressure , ...
                                                         sol{i}.s(:,2)   , ...

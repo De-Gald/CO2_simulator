@@ -3,6 +3,11 @@ function visualSimulation(opt)
 
    h2 = figure; plot(1); ax = get(h2, 'currentaxes');
 
+   reports.masses = masses;
+   reports.t = t;
+   reports.sol = sol;
+   reports.W = W;
+
    plotTrappingDistribution(ax, reports);
    fsize = 16;
    set(get(gca, 'xlabel'), 'fontsize', fsize)

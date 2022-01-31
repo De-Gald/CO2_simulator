@@ -23,7 +23,7 @@ class GUI:
     def __init__(self):
         self.window = Tk()
         self.window.title('CO2 storage simulator')
-        self.formation = 8
+        self.formation = 13
         self.scatter = None
         self.well_x = 0
         self.well_y = 0
