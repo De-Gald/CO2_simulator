@@ -1,0 +1,5 @@
+matlabengineforpython===R2021b
+matplotlib==3.5.0
+numpy==1.21.2
+pydantic==1.9.0
+tensorflow==2.8.0
