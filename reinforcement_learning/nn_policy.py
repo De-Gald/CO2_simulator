@@ -19,6 +19,7 @@ from utils import get_vertices
 def run_one_step(
     x: float,
     y: float,
+    formation: str,
     masses: np.array,
     model: keras.models.Sequential,
     loss_fn: keras.losses.binary_crossentropy,
@@ -42,7 +43,10 @@ def run_one_step(
         y -= 2000
 
     grads = tape.gradient(loss, model.trainable_variables)
-    masses_dict = explore_simulation([(x, y)], eng=eng)
+    masses = explore_simulation((x, y), formation=formation, eng=eng)
+    masses_dict = {
+        (x, y): masses
+    }
     reward = get_rewards(masses_dict)[0]
     masses = masses_dict[(x, y)].flatten()
 
@@ -79,13 +83,12 @@ def run_multiple_episodes(
         path = []
 
         x, y = centroid
-        masses_dict = explore_simulation([(x, y)], eng=eng)
-        _masses = masses_dict[(x, y)]
+        _masses = explore_simulation((x, y), formation=formation, eng=eng)
         masses = _masses.flatten()
 
         for step in range(n_max_steps):
             print(f'Step {step}')
-            x, y, masses, reward, done, grads = run_one_step(x, y, masses, model, loss_fn, eng)
+            x, y, masses, reward, done, grads = run_one_step(x, y, formation, masses, model, loss_fn, eng)
             if done:
                 break
             path.append((x, y))
@@ -184,4 +187,4 @@ def run_nn_policy(formation: str) -> None:
 
 
 if __name__ == '__main__':
-    run_nn_policy(FORMATIONS[12])
+    run_nn_policy(FORMATIONS[13])

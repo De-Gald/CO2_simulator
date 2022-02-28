@@ -1,12 +1,13 @@
 import matlab.engine
 import numpy as np
 
-from typing import Dict, List, Tuple
 from pydantic import BaseModel
 
 from plotting.plot_trapping_distribution import plot_trapping_distribution
 
 YEAR = 3600 * 24 * 365.2425
+KILOGRAM = 1000
+MEGA = KILOGRAM * 10 ** 6
 
 
 class InitialParameters(BaseModel):
@@ -35,45 +36,50 @@ class InitialParameters(BaseModel):
     use_dissolution: bool = False
     use_trapping: bool = False
     use_cap_fringe: bool = False
-    well_position: Tuple[int] = []
+    well_position: tuple[float, float] = None
 
 
 def explore_simulation(
-    xy: List[any],
+    well_pos: tuple[float, float],
     formation='utsirafm',
     show_plot=False,
     eng=None,
     **kwargs
-) -> Dict[Tuple[float, float], np.array]:
+) -> (dict[tuple[float, float], np.array], np.array, np.array):
     if not eng:
         eng = matlab.engine.start_matlab()
         eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
+        eng.evalc("warning('off', 'all');")
 
     kwargs.update({'formation': formation})
     initial_parameters = InitialParameters(**kwargs)
-    xy = list(filter(None.__ne__, xy))
 
-    masses = {}
+    initial_parameters.well_position = well_pos
+    eng.workspace['initial_parameters'] = initial_parameters.dict()
+    masses_new, t, sol, w = eng.eval(
+        'get_simulation_results(initial_parameters);', nargout=4
+    )
 
-    for idx, well_pos in enumerate(xy):
-        initial_parameters.well_position = well_pos
-        eng.workspace['initial_parameters'] = initial_parameters.dict()
-        masses_new, t, sol, w = eng.eval(
-            'get_simulation_results(initial_parameters);', nargout=4
-        )
+    _masses_np, t_np = _convert_to_np_arrays(masses_new, t)
+    masses_np = _convert_masses_to_mega(_masses_np)
+    plot_trapping_distribution(masses_np, t_np, show_plot=show_plot)
 
-        masses_np, t_np = _convert_to_np_arrays(masses_new, t)
+    return masses_np, t_np
 
-        masses.update({
-            xy[idx]: plot_trapping_distribution(masses_np, t_np, show_plot=show_plot)
-        })
 
-    return masses
+def _convert_masses_to_mega(
+    masses: np.array
+) -> np.array:
+    masses_mega = masses / MEGA
+
+    masses_mega_transposed = masses_mega.transpose()
+    _masses_mega_transposed = np.delete(masses_mega_transposed, [0, 5], 0)
+    return np.around(_masses_mega_transposed).astype(int)
 
 
 def _convert_to_np_arrays(
-    masses,
-    t
+    masses: np.array,
+    t: np.array
 ) -> (np.array, np.array):
     t_np = np.array(t)
     _masses_np = np.array(masses)
@@ -82,4 +88,4 @@ def _convert_to_np_arrays(
 
 
 if __name__ == '__main__':
-    explore_simulation([(487000.0, 6721000.0)], show_plot=True)
+    explore_simulation((487000.0, 6721000.0), show_plot=True)

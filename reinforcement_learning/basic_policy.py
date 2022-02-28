@@ -59,9 +59,15 @@ def run_basic_policy(
 
         for step in range(NUMBER_OF_WELLS):
             print(f'Step {step}')
-            current_masses = explore_simulation(
-                _get_list_of_5_locations(CELL_INCREMENT, masses, x, y),
-                eng=eng)
+            _list_of_5_locations = _get_list_of_5_locations(CELL_INCREMENT, masses, x, y)
+            list_of_5_locations = list(filter(None, _list_of_5_locations))
+            current_masses = {}
+            for location in list_of_5_locations:
+                current_masses.update(
+                    {
+                        location: explore_simulation(location, formation=formation, eng=eng)
+                    }
+                )
             masses.update(current_masses)
 
             rewards = get_rewards(current_masses)
@@ -105,6 +111,8 @@ def get_random_centroids(
 def get_matlab_engine() -> matlab.engine:
     eng = matlab.engine.start_matlab()
     eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
+    eng.evalc("warning('off', 'all');")
+
     return eng
 
 
@@ -121,9 +129,9 @@ def get_rewards(
 def _get_list_of_5_locations(
     cell_increment: int,
     masses: Dict[str, np.array],
-    x: int,
-    y: int
-) -> List[Optional[Tuple[int]]]:
+    x: float,
+    y: float
+) -> List[Optional[Tuple[float, float]]]:
     return [
         (x, y)
         if (x, y) not in masses.keys() else None,
@@ -149,4 +157,4 @@ def _get_possible_locations(
 
 
 if __name__ == '__main__':
-    run_basic_policy(FORMATIONS[12])
+    run_basic_policy(FORMATIONS[13])
