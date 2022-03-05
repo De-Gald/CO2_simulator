@@ -1,6 +1,12 @@
 import matplotlib.pyplot as plt
 from simulation.gui import FORMATIONS, plot_formation
 
+WELL_LOCS = [[(909200.42896692, 7961347.201625), (909200.42896692, 7963347.201625), (911200.42896692, 7963347.201625),
+              (911200.42896692, 7965347.201625), (911200.42896692, 7967347.201625), (911200.42896692, 7965347.201625),
+              (911200.42896692, 7963347.201625), (913200.42896692, 7963347.201625), (913200.42896692, 7965347.201625),
+              (913200.42896692, 7967347.201625)]]
+REWARDS = [[13, 27, 42, 44, 29, 44, 42, 57, 57, 49]]
+
 
 def plot_well_locations(
     formation: str,
@@ -41,4 +47,4 @@ def plot_well_locations(
 
 
 if __name__ == '__main__':
-    plot_well_locations(FORMATIONS[13])
+    plot_well_locations(FORMATIONS[13], well_locs=WELL_LOCS, rewards=REWARDS)

@@ -9,7 +9,7 @@ from utils import get_colors, get_vertices
 COLOUR_INTENSITY = 0.85
 
 
-def plot_formation(
+def plot_formation_web(
     formation: str,
     marker: Optional[tuple[float, float]] = None
 ) -> go.Figure:

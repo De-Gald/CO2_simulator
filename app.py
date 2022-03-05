@@ -1,11 +1,16 @@
+from typing import Optional
+
 import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
-import numpy as np
+from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
+import numpy as np
+import threading
+from reinforcement_learning.nn_policy import run_nn_policy
 
-from plotting.plot_formation_web import plot_formation
+from plotting.plot_formation_web import plot_formation_web
 from plotting.plot_trapping_distribution_web import plot_trapping_distribution
 from simulation.explore_simulation import explore_simulation
 
@@ -22,10 +27,20 @@ OPTIONS = [
     for formation in FORMATIONS
 ]
 DEFAULT_FORMATION = FORMATIONS[13]
+COLORS = ['primary', 'secondary']
+FIRST_ELEMENT = 'DELETE THIS ELEMENT TO STOP EXECUTION OF THE FUNCTION'
 
 app = dash.Dash(external_stylesheets=[dbc.themes.MINTY])
 app.title = 'CO2 storage simulator'
 server = app.server
+
+previous_figure = {}
+figure = {}
+
+run_smart_well_location = 0
+run_basic_well_location = 0
+
+stop_smart_well_location = []
 
 app.layout = dbc.Container(
     [
@@ -55,19 +70,19 @@ app.layout = dbc.Container(
                         dbc.Button(
                             'Simulation',
                             id='simulation',
-                            color='secondary',
+                            color=COLORS[0],
                             n_clicks_timestamp='0',
                         ),
                         dbc.Button(
                             'Smart well location',
                             id='smart_well_location',
-                            color='secondary',
+                            color=COLORS[1],
                             n_clicks_timestamp='0',
                         ),
                         dbc.Button(
                             'Basic well location',
                             id='basic_well_location',
-                            color='secondary',
+                            color=COLORS[1],
                             n_clicks_timestamp='0',
                         ),
                     ],
@@ -183,6 +198,24 @@ app.layout = dbc.Container(
                                 )
                             ]
                         ),
+                        html.Div(
+                            [
+                                dcc.Interval(
+                                    id='figure_updater',
+                                    interval=3 * 1000,
+                                    n_intervals=0,
+                                    disabled=True
+                                ),
+                                dcc.Interval(
+                                    id='text_updater',
+                                    interval=3 * 1000,
+                                    n_intervals=0,
+                                    disabled=True
+                                ),
+                                dcc.Store(id='local_figure', storage_type='session'),
+                                dcc.Store(id='local_text', storage_type='session')
+                            ]
+                        )
                     ],
                     width=4,
                 ),
@@ -195,7 +228,12 @@ app.layout = dbc.Container(
 
 
 @app.callback(
-    Output('output_graph', 'figure'),
+    [
+        Output('output_graph', 'figure'),
+        Output('figure_updater', 'disabled'),
+        Output('smart_well_location', 'color'),
+        Output('basic_well_location', 'color')
+    ],
     [
         Input('simulation', 'n_clicks_timestamp'),
         Input('smart_well_location', 'n_clicks_timestamp'),
@@ -213,7 +251,7 @@ app.layout = dbc.Container(
         State('co2_residual', 'value')
     ],
 )
-def run_function(
+def run_simulation(
     simulation: float,
     smart_well_location: float,
     basic_well_location: float,
@@ -226,46 +264,116 @@ def run_function(
     seafloor_temperature: float,
     water_residual: float,
     co2_residual: float
-) -> go.Figure:
+) -> [go.Figure, bool]:
     button_pressed = np.argmax(
         np.array(
             [
                 0,
                 float(simulation),
                 float(smart_well_location),
-                float(basic_well_location),
+                float(basic_well_location)
             ]
         )
     )
 
-    output = 'Start'
-
     if button_pressed == 1:
         masses, time = explore_simulation((487000.0, 6721000.0))
         output = plot_trapping_distribution(masses, time)
+        return (
+            output,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update
+        )
     elif button_pressed == 2:
-        output = 'Smart well location'
+        global run_smart_well_location
+        run_smart_well_location = bool((run_smart_well_location + 1) % 2)
+        global stop_smart_well_location
+        if run_smart_well_location:
+            stop_smart_well_location.append(FIRST_ELEMENT)
+            smart_well_location_thread = threading.Thread(
+                target=run_nn_policy,
+                name='smart_well_location',
+                kwargs={
+                    'formation': DEFAULT_FORMATION,
+                    'figure_callback': set_figure_callback,
+                    'stop_smart_well_location': stop_smart_well_location
+                }
+            )
+            smart_well_location_thread.start()
+        else:
+            stop_smart_well_location.pop()
+        return (
+            dash.no_update,
+            not run_smart_well_location,
+            COLORS[not run_smart_well_location],
+            dash.no_update
+        )
     elif button_pressed == 3:
-        output = 'Basic well location'
-
-    return output
+        global run_basic_well_location
+        run_basic_well_location = bool((run_basic_well_location + 1) % 2)
+        return (
+            dash.no_update,
+            not run_basic_well_location,
+            dash.no_update,
+            COLORS[not run_basic_well_location]
+        )
+    else:
+        raise PreventUpdate
 
 
 @app.callback(
     Output('display', 'figure'),
-    [Input('display', 'clickData'), Input('formation_dropdown', 'value')]
+    [
+        Input('display', 'clickData'),
+        Input('formation_dropdown', 'value'),
+        Input('local_figure', 'data')
+    ],
 )
 def _plot_formation_with_well(
-    click_data: dict[str, list[dict[str, float]]],
+    click_data: Optional[dict[str, list[dict[str, float]]]],
     formation: str,
-):
+    figure_dict: dict[str, any]
+) -> [go.Figure, bool]:
+    if figure_dict:
+        return go.Figure(**figure_dict)
+
     marker = None
     if click_data:
         x = click_data['points'][0]['x']
         y = click_data['points'][0]['y']
         marker = (x, y)
 
-    return plot_formation(formation, marker=marker)
+    return plot_formation_web(formation, marker=marker)
+
+
+@app.callback(
+    Output('local_figure', 'data'),
+    Input('figure_updater', 'n_intervals')
+)
+def dynamic_figure_update(
+    n_intervals: int
+) -> dict[str, any]:
+    global previous_figure
+    if figure != previous_figure:
+        previous_figure = figure
+        return figure
+    else:
+        return dash.no_update
+
+
+def reset_figure_callback() -> None:
+    global previous_figure
+    global figure
+    previous_figure = {}
+    figure = {}
+
+
+def set_figure_callback(
+    fig: dict[str, any]
+) -> None:
+    global figure
+    figure = fig
 
 
 if __name__ == '__main__':

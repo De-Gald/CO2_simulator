@@ -12,7 +12,7 @@ from reinforcement_learning.basic_policy import (
     get_random_centroids,
     get_rewards,
 )
-from plotting.dynamic_plotting import plot_well_locations
+from plotting.dynamic_plotting_web import plot_well_locations_web
 from utils import get_vertices
 
 
@@ -43,7 +43,7 @@ def run_one_step(
         y -= 2000
 
     grads = tape.gradient(loss, model.trainable_variables)
-    masses = explore_simulation((x, y), formation=formation, eng=eng)
+    masses, _ = explore_simulation((x, y), formation=formation, show_plot=True, eng=eng)
     masses_dict = {
         (x, y): masses
     }
@@ -62,7 +62,9 @@ def run_multiple_episodes(
     n_episodes: int,
     n_max_steps: int,
     model: keras.models,
-    loss_fn: keras.losses
+    loss_fn: keras.losses,
+    figure_callback=None,
+    stop_smart_well_location=None
 ) -> [List[List[int]], List[List[float]]]:
     all_rewards = []
     all_grads = []
@@ -83,11 +85,13 @@ def run_multiple_episodes(
         path = []
 
         x, y = centroid
-        _masses = explore_simulation((x, y), formation=formation, eng=eng)
+        _masses, _ = explore_simulation((x, y), formation=formation, show_plot=True, eng=eng)
         masses = _masses.flatten()
 
         for step in range(n_max_steps):
             print(f'Step {step}')
+            if not stop_smart_well_location:
+                return None, None
             x, y, masses, reward, done, grads = run_one_step(x, y, formation, masses, model, loss_fn, eng)
             if done:
                 break
@@ -100,7 +104,7 @@ def run_multiple_episodes(
 
         if path:
             paths.append(path)
-            plot_well_locations(formation, paths, all_rewards)
+            plot_well_locations_web(formation, paths, all_rewards, figure_callback=figure_callback)
 
         print(f'Current rewards {current_rewards}')
         if current_grads:
@@ -136,7 +140,11 @@ def discount_and_normalize_rewards(
     ]
 
 
-def run_nn_policy(formation: str) -> None:
+def run_nn_policy(
+    formation: str,
+    figure_callback=None,
+    stop_smart_well_location=None,
+) -> None:
     n_inputs = 66
     n_outputs = 4
 
@@ -162,8 +170,15 @@ def run_nn_policy(formation: str) -> None:
             n_episodes_per_update,
             n_max_steps,
             model,
-            loss_fn
+            loss_fn,
+            figure_callback=figure_callback,
+            stop_smart_well_location=stop_smart_well_location
         )
+        if not stop_smart_well_location:
+            return
+        if not all_rewards:
+            print(f'Iteration: {iteration + 1}/{n_iterations}, no results ')
+            continue
         mean_reward = sum(map(sum, all_rewards)) / n_episodes_per_update
         print(f'All rewards: {all_rewards}')
         print(f'Iteration: {iteration + 1}/{n_iterations}, mean reward: {mean_reward}')

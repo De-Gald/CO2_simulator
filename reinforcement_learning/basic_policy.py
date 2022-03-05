@@ -5,7 +5,7 @@ import matlab.engine
 from matplotlib import pyplot as plt
 
 from simulation.gui import FORMATIONS, plot_formation
-from plotting.dynamic_plotting import plot_well_locations
+from plotting.dynamic_plotting_web import plot_well_locations_web
 from simulation.explore_simulation import explore_simulation
 from utils import get_vertices
 
@@ -95,7 +95,7 @@ def run_basic_policy(
             rewards_different_inits.append(rewards_step)
         if path:
             paths.append(path)
-            plot_well_locations(formation, paths, rewards_different_inits)
+            plot_well_locations_web(formation, paths, rewards_different_inits)
     return rewards_different_inits, paths
 
 
