@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 from tensorflow import keras
 import numpy as np
 import matlab.engine
-from typing import List
+from typing import List, Callable, Optional
 
 from simulation.gui import FORMATIONS, plot_formation
 from simulation.explore_simulation import explore_simulation
@@ -23,7 +23,8 @@ def run_one_step(
     masses: np.array,
     model: keras.models.Sequential,
     loss_fn: keras.losses.binary_crossentropy,
-    eng: matlab.engine
+    eng: matlab.engine,
+    trapping_graph_callback: Optional[Callable] = None
 ) -> [float, float, np.array, int, bool, List[tf.Tensor]]:
     with tf.GradientTape() as tape:
         probas = model(masses[np.newaxis])
@@ -43,7 +44,11 @@ def run_one_step(
         y -= 2000
 
     grads = tape.gradient(loss, model.trainable_variables)
-    masses, _ = explore_simulation((x, y), formation=formation, show_plot=True, eng=eng)
+    masses, time = explore_simulation((x, y), formation=formation, show_plot=True, eng=eng)
+
+    if trapping_graph_callback:
+        trapping_graph_callback(masses, time)
+
     masses_dict = {
         (x, y): masses
     }
@@ -63,8 +68,9 @@ def run_multiple_episodes(
     n_max_steps: int,
     model: keras.models,
     loss_fn: keras.losses,
-    figure_callback=None,
-    stop_smart_well_location=None
+    formation_graph_callback: Optional[Callable] = None,
+    trapping_graph_callback: Optional[Callable] = None,
+    stop_smart_well_location: Optional[list[any]] = None,
 ) -> [List[List[int]], List[List[float]]]:
     all_rewards = []
     all_grads = []
@@ -85,14 +91,22 @@ def run_multiple_episodes(
         path = []
 
         x, y = centroid
-        _masses, _ = explore_simulation((x, y), formation=formation, show_plot=True, eng=eng)
+        _masses, time = explore_simulation((x, y), formation=formation, show_plot=True, eng=eng)
         masses = _masses.flatten()
+
+        if trapping_graph_callback:
+            trapping_graph_callback(_masses, time)
 
         for step in range(n_max_steps):
             print(f'Step {step}')
-            if not stop_smart_well_location:
+            if stop_smart_well_location:
                 return None, None
-            x, y, masses, reward, done, grads = run_one_step(x, y, formation, masses, model, loss_fn, eng)
+
+            x, y, masses, reward, done, grads = run_one_step(
+                x, y, formation, masses, model, loss_fn, eng,
+                trapping_graph_callback=trapping_graph_callback
+            )
+
             if done:
                 break
             path.append((x, y))
@@ -104,7 +118,7 @@ def run_multiple_episodes(
 
         if path:
             paths.append(path)
-            plot_well_locations_web(formation, paths, all_rewards, figure_callback=figure_callback)
+            plot_well_locations_web(formation, paths, all_rewards, figure_callback=formation_graph_callback)
 
         print(f'Current rewards {current_rewards}')
         if current_grads:
@@ -142,8 +156,9 @@ def discount_and_normalize_rewards(
 
 def run_nn_policy(
     formation: str,
-    figure_callback=None,
-    stop_smart_well_location=None,
+    formation_graph_callback: Optional[Callable] = None,
+    trapping_graph_callback: Optional[Callable] = None,
+    stop_smart_well_location: Optional[list[any]] = None,
 ) -> None:
     n_inputs = 66
     n_outputs = 4
@@ -171,10 +186,11 @@ def run_nn_policy(
             n_max_steps,
             model,
             loss_fn,
-            figure_callback=figure_callback,
+            formation_graph_callback=formation_graph_callback,
+            trapping_graph_callback=trapping_graph_callback,
             stop_smart_well_location=stop_smart_well_location
         )
-        if not stop_smart_well_location:
+        if stop_smart_well_location:
             return
         if not all_rewards:
             print(f'Iteration: {iteration + 1}/{n_iterations}, no results ')

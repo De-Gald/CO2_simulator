@@ -45,7 +45,7 @@ def explore_simulation(
     show_plot=False,
     eng=None,
     **kwargs
-) -> (dict[tuple[float, float], np.array], np.array, np.array):
+) -> (np.array, np.array):
     if not eng:
         eng = matlab.engine.start_matlab()
         eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))

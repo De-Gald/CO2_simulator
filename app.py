@@ -28,19 +28,25 @@ OPTIONS = [
 ]
 DEFAULT_FORMATION = FORMATIONS[13]
 COLORS = ['primary', 'secondary']
-FIRST_ELEMENT = 'DELETE THIS ELEMENT TO STOP EXECUTION OF THE FUNCTION'
 
 app = dash.Dash(external_stylesheets=[dbc.themes.MINTY])
 app.title = 'CO2 storage simulator'
 server = app.server
 
-previous_figure = {}
-figure = {}
+previous_formation_graph = {}
+formation_graph = {}
+
+previous_trapping_masses = np.array([])
+trapping_masses = np.array([])
+trapping_time = np.array([])
 
 run_smart_well_location = 0
 run_basic_well_location = 0
 
-stop_smart_well_location = []
+stop_smart_well_location = [True]
+
+count = 0
+initial_call = True
 
 app.layout = dbc.Container(
     [
@@ -98,8 +104,8 @@ app.layout = dbc.Container(
                 dbc.Col(
                     dbc.Spinner(
                         dcc.Graph(
-                            id='display',
-                            style={'height': '80vh'}
+                            id='formation_graph',
+                            style={'height': '80vh'},
                         ),
                         color='primary',
                     ),
@@ -192,7 +198,7 @@ app.layout = dbc.Container(
                                 html.H5('Trapping inventory'),
                                 dbc.Spinner(
                                     [
-                                        dcc.Graph(id='output_graph'),
+                                        dcc.Graph(id='trapping_graph'),
                                     ],
                                     color='primary'
                                 )
@@ -201,19 +207,19 @@ app.layout = dbc.Container(
                         html.Div(
                             [
                                 dcc.Interval(
-                                    id='figure_updater',
+                                    id='formation_updater',
                                     interval=3 * 1000,
                                     n_intervals=0,
                                     disabled=True
                                 ),
                                 dcc.Interval(
-                                    id='text_updater',
-                                    interval=3 * 1000,
+                                    id='trapping_graph_updater',
+                                    interval=5 * 1000,
                                     n_intervals=0,
                                     disabled=True
                                 ),
-                                dcc.Store(id='local_figure', storage_type='session'),
-                                dcc.Store(id='local_text', storage_type='session')
+                                dcc.Store(id='local_formation', storage_type='session'),
+                                dcc.Store(id='local_trapping', storage_type='session')
                             ]
                         )
                     ],
@@ -229,17 +235,24 @@ app.layout = dbc.Container(
 
 @app.callback(
     [
-        Output('output_graph', 'figure'),
-        Output('figure_updater', 'disabled'),
+        Output('trapping_graph', 'figure'),
+        Output('formation_updater', 'disabled'),
+        Output('trapping_graph_updater', 'disabled'),
         Output('smart_well_location', 'color'),
-        Output('basic_well_location', 'color')
+        Output('smart_well_location', 'n_clicks_timestamp'),
+        Output('basic_well_location', 'color'),
+        Output('basic_well_location', 'n_clicks_timestamp'),
+        Output('local_formation', 'clear_data'),
+        Output('local_trapping', 'clear_data')
     ],
     [
         Input('simulation', 'n_clicks_timestamp'),
         Input('smart_well_location', 'n_clicks_timestamp'),
-        Input('basic_well_location', 'n_clicks_timestamp')
+        Input('basic_well_location', 'n_clicks_timestamp'),
+        Input('local_trapping', 'data')
     ],
     [
+        State('formation_dropdown', 'value'),
         State('injection_rate', 'value'),
         State('injection_period', 'value'),
         State('injection_time_steps', 'value'),
@@ -250,11 +263,14 @@ app.layout = dbc.Container(
         State('water_residual', 'value'),
         State('co2_residual', 'value')
     ],
+    prevent_initial_call=True
 )
 def run_simulation(
     simulation: float,
     smart_well_location: float,
     basic_well_location: float,
+    figure_dict: dict[str, any],
+    formation: str,
     injection_rate: int,
     injection_period: int,
     injection_time_steps: int,
@@ -279,101 +295,196 @@ def run_simulation(
     if button_pressed == 1:
         masses, time = explore_simulation((487000.0, 6721000.0))
         output = plot_trapping_distribution(masses, time)
+
         return (
             output,
             dash.no_update,
             dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
             dash.no_update
         )
+
     elif button_pressed == 2:
         global run_smart_well_location
-        run_smart_well_location = bool((run_smart_well_location + 1) % 2)
         global stop_smart_well_location
+
+        run_smart_well_location = bool((run_smart_well_location + 1) % 2)
+
         if run_smart_well_location:
-            stop_smart_well_location.append(FIRST_ELEMENT)
+            trapping_graph = dash.no_update
+            local_formation = False
+            local_trapping = False
+
+            stop_smart_well_location.pop()
             smart_well_location_thread = threading.Thread(
                 target=run_nn_policy,
                 name='smart_well_location',
                 kwargs={
                     'formation': DEFAULT_FORMATION,
-                    'figure_callback': set_figure_callback,
+                    'formation_graph_callback': set_formation_graph_callback,
+                    'trapping_graph_callback': set_trapping_graph_callback,
                     'stop_smart_well_location': stop_smart_well_location
                 }
             )
             smart_well_location_thread.start()
         else:
-            stop_smart_well_location.pop()
+            stop_smart_well_location.append(True)
+            reset_formation_graph_callback()
+            reset_trapping_graph_callback()
+            trapping_graph = 'Empty graph'
+            local_formation = True
+            local_trapping = True
+
         return (
-            dash.no_update,
+            trapping_graph,
+            not run_smart_well_location,
             not run_smart_well_location,
             COLORS[not run_smart_well_location],
-            dash.no_update
+            0,
+            dash.no_update,
+            dash.no_update,
+            local_formation,
+            local_trapping
         )
+
     elif button_pressed == 3:
         global run_basic_well_location
         run_basic_well_location = bool((run_basic_well_location + 1) % 2)
+
         return (
             dash.no_update,
             not run_basic_well_location,
+            not run_basic_well_location,
             dash.no_update,
-            COLORS[not run_basic_well_location]
+            dash.no_update,
+            COLORS[not run_basic_well_location],
+            0,
+            dash.no_update,
+            dash.no_update
         )
+
+    if figure_dict:
+        return (
+            go.Figure(**figure_dict),
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+            dash.no_update,
+        )
+
     else:
         raise PreventUpdate
 
 
 @app.callback(
-    Output('display', 'figure'),
+    Output('formation_graph', 'figure'),
     [
-        Input('display', 'clickData'),
+        Input('formation_graph', 'clickData'),
         Input('formation_dropdown', 'value'),
-        Input('local_figure', 'data')
-    ],
+        Input('local_formation', 'data')
+    ]
 )
 def _plot_formation_with_well(
     click_data: Optional[dict[str, list[dict[str, float]]]],
     formation: str,
     figure_dict: dict[str, any]
 ) -> [go.Figure, bool]:
-    if figure_dict:
+    ctx = dash.callback_context
+    triggered_input = ctx.triggered
+
+    global initial_call
+    if initial_call:
+        initial_call = False
+        return plot_formation_web(formation)
+
+    elif triggered_input[0]['prop_id'] == 'local_formation.data' and figure_dict:
         return go.Figure(**figure_dict)
 
-    marker = None
-    if click_data:
-        x = click_data['points'][0]['x']
-        y = click_data['points'][0]['y']
-        marker = (x, y)
+    elif any(triggered_input[0]['prop_id'] == x for x in ['formation_graph.clickData', 'formation_dropdown.value']):
+        marker = None
+        if click_data:
+            x = click_data['points'][0]['x']
+            y = click_data['points'][0]['y']
+            marker = (x, y)
+        return plot_formation_web(formation, marker=marker)
 
-    return plot_formation_web(formation, marker=marker)
-
-
-@app.callback(
-    Output('local_figure', 'data'),
-    Input('figure_updater', 'n_intervals')
-)
-def dynamic_figure_update(
-    n_intervals: int
-) -> dict[str, any]:
-    global previous_figure
-    if figure != previous_figure:
-        previous_figure = figure
-        return figure
     else:
         return dash.no_update
 
 
-def reset_figure_callback() -> None:
-    global previous_figure
-    global figure
-    previous_figure = {}
-    figure = {}
+@app.callback(
+    Output('local_formation', 'data'),
+    Input('formation_updater', 'n_intervals'),
+    prevent_initial_call=True
+)
+def dynamic_figure_update(
+    n_intervals: int
+) -> dict[str, any]:
+    global previous_formation_graph
+    if formation_graph != previous_formation_graph:
+        previous_formation_graph = formation_graph
+        return formation_graph
+    else:
+        return dash.no_update
 
 
-def set_figure_callback(
+@app.callback(
+    Output('local_trapping', 'data'),
+    Input('trapping_graph_updater', 'n_intervals'),
+    prevent_initial_call=True
+)
+def dynamic_trapping_graph_update(
+    n_intervals: int
+) -> dict[str, any]:
+    global previous_trapping_masses
+    global count
+    count += 1
+    print(f'Attempt {count}')
+    if not np.array_equal(trapping_masses, previous_trapping_masses):
+        print(f'Attempt succeeded')
+        previous_trapping_masses = trapping_masses
+        return plot_trapping_distribution(trapping_masses, trapping_time).to_dict()
+    else:
+        return dash.no_update
+
+
+def reset_formation_graph_callback() -> None:
+    global previous_formation_graph
+    global formation_graph
+    previous_formation_graph = {}
+    formation_graph = {}
+
+
+def reset_trapping_graph_callback() -> None:
+    global previous_trapping_masses
+    global trapping_masses
+    previous_trapping_masses = []
+    trapping_masses = []
+
+
+def set_formation_graph_callback(
     fig: dict[str, any]
 ) -> None:
-    global figure
-    figure = fig
+    global formation_graph
+    formation_graph = fig
+
+
+def set_trapping_graph_callback(
+    masses: np.array,
+    time: np.array
+) -> None:
+    global trapping_masses
+    global trapping_time
+    trapping_masses = masses
+    trapping_time = time
 
 
 if __name__ == '__main__':
