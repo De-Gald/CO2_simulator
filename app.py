@@ -12,7 +12,7 @@ from reinforcement_learning.nn_policy import run_nn_policy
 
 from plotting.plot_formation_web import plot_formation_web
 from plotting.plot_trapping_distribution_web import plot_trapping_distribution
-from simulation.explore_simulation import explore_simulation
+from simulation.explore_simulation import explore_simulation, YEAR
 
 FORMATIONS = [
     'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Gassumfm',
@@ -48,6 +48,8 @@ stop_smart_well_location = [True]
 count = 0
 initial_call = True
 
+current_well_loc = (0, 0)
+
 app.layout = dbc.Container(
     [
         dbc.Row(
@@ -76,7 +78,7 @@ app.layout = dbc.Container(
                         dbc.Button(
                             'Simulation',
                             id='simulation',
-                            color=COLORS[0],
+                            color='info',
                             n_clicks_timestamp='0',
                         ),
                         dbc.Button(
@@ -122,7 +124,7 @@ app.layout = dbc.Container(
                                     min=1,
                                     max=10,
                                     step=1,
-                                    value=10,
+                                    value=1,
                                 ),
                                 dbc.Row([
                                     dbc.Col(
@@ -130,7 +132,7 @@ app.layout = dbc.Container(
                                             dbc.Label('Injection period', size='md'),
                                             dcc.Input(
                                                 id='injection_period',
-                                                value=50,
+                                                value=10,
                                                 type='number'
                                             ),
                                             dbc.Label('Injection time steps', size='md'),
@@ -142,7 +144,7 @@ app.layout = dbc.Container(
                                             dbc.Label('Migration period', size='md'),
                                             dcc.Input(
                                                 id='migration_period',
-                                                value=100,
+                                                value=10,
                                                 type='number'
                                             ),
                                             dbc.Label('Migration time steps', size='md'),
@@ -150,12 +152,6 @@ app.layout = dbc.Container(
                                                 id='migration_time_steps',
                                                 value=5,
                                                 type='number'
-                                            ),
-                                            dcc.Checklist(
-                                                id='checklist_params',
-                                                options=[
-                                                    {'label': 'Use dissolution', 'value': 'use_dissolution'},
-                                                ],
                                             ),
                                         ],
                                         width=6
@@ -197,9 +193,7 @@ app.layout = dbc.Container(
                             [
                                 html.H5('Trapping inventory'),
                                 dbc.Spinner(
-                                    [
-                                        dcc.Graph(id='trapping_graph'),
-                                    ],
+                                    dcc.Graph(id='trapping_graph'),
                                     color='primary'
                                 )
                             ]
@@ -218,8 +212,8 @@ app.layout = dbc.Container(
                                     n_intervals=0,
                                     disabled=True
                                 ),
-                                dcc.Store(id='local_formation', storage_type='session'),
-                                dcc.Store(id='local_trapping', storage_type='session')
+                                dcc.Store(id='local_formation'),
+                                dcc.Store(id='local_trapping')
                             ]
                         )
                     ],
@@ -238,11 +232,11 @@ app.layout = dbc.Container(
         Output('trapping_graph', 'figure'),
         Output('formation_updater', 'disabled'),
         Output('trapping_graph_updater', 'disabled'),
+        Output('simulation', 'n_clicks_timestamp'),
         Output('smart_well_location', 'color'),
         Output('smart_well_location', 'n_clicks_timestamp'),
         Output('basic_well_location', 'color'),
         Output('basic_well_location', 'n_clicks_timestamp'),
-        Output('local_formation', 'clear_data'),
         Output('local_trapping', 'clear_data')
     ],
     [
@@ -293,19 +287,31 @@ def run_simulation(
     )
 
     if button_pressed == 1:
-        masses, time = explore_simulation((487000.0, 6721000.0))
+        masses, time = explore_simulation(
+            current_well_loc,
+            formation=formation,
+            default_rate=injection_rate,
+            inj_time=injection_period * YEAR,
+            inj_steps=injection_time_steps,
+            mig_time=migration_period * YEAR,
+            mig_steps=migration_time_steps,
+            seafloor_depth=seafloor_depth,
+            seafloor_temp=seafloor_temperature,
+            water_residual=water_residual,
+            co2_residual=co2_residual
+        )
         output = plot_trapping_distribution(masses, time)
 
         return (
             output,
             dash.no_update,
             dash.no_update,
+            0,
             dash.no_update,
             dash.no_update,
             dash.no_update,
             dash.no_update,
             dash.no_update,
-            dash.no_update
         )
 
     elif button_pressed == 2:
@@ -316,7 +322,6 @@ def run_simulation(
 
         if run_smart_well_location:
             trapping_graph = dash.no_update
-            local_formation = False
             local_trapping = False
 
             stop_smart_well_location.pop()
@@ -324,10 +329,19 @@ def run_simulation(
                 target=run_nn_policy,
                 name='smart_well_location',
                 kwargs={
-                    'formation': DEFAULT_FORMATION,
+                    'formation': formation,
                     'formation_graph_callback': set_formation_graph_callback,
                     'trapping_graph_callback': set_trapping_graph_callback,
-                    'stop_smart_well_location': stop_smart_well_location
+                    'stop_smart_well_location': stop_smart_well_location,
+                    'default_rate': injection_rate,
+                    'inj_time': injection_period * YEAR,
+                    'inj_steps': injection_time_steps,
+                    'mig_time': migration_period * YEAR,
+                    'mig_steps': migration_time_steps,
+                    'seafloor_depth': seafloor_depth,
+                    'seafloor_temp': seafloor_temperature,
+                    'water_residual': water_residual,
+                    'co2_residual': co2_residual
                 }
             )
             smart_well_location_thread.start()
@@ -336,18 +350,17 @@ def run_simulation(
             reset_formation_graph_callback()
             reset_trapping_graph_callback()
             trapping_graph = 'Empty graph'
-            local_formation = True
             local_trapping = True
 
         return (
             trapping_graph,
             not run_smart_well_location,
             not run_smart_well_location,
+            dash.no_update,
             COLORS[not run_smart_well_location],
             0,
             dash.no_update,
             dash.no_update,
-            local_formation,
             local_trapping
         )
 
@@ -361,9 +374,9 @@ def run_simulation(
             not run_basic_well_location,
             dash.no_update,
             dash.no_update,
+            dash.no_update,
             COLORS[not run_basic_well_location],
             0,
-            dash.no_update,
             dash.no_update
         )
 
@@ -390,7 +403,7 @@ def run_simulation(
         Input('formation_graph', 'clickData'),
         Input('formation_dropdown', 'value'),
         Input('local_formation', 'data')
-    ]
+    ],
 )
 def _plot_formation_with_well(
     click_data: Optional[dict[str, list[dict[str, float]]]],
@@ -400,24 +413,24 @@ def _plot_formation_with_well(
     ctx = dash.callback_context
     triggered_input = ctx.triggered
 
-    global initial_call
-    if initial_call:
-        initial_call = False
-        return plot_formation_web(formation)
-
-    elif triggered_input[0]['prop_id'] == 'local_formation.data' and figure_dict:
+    if triggered_input[0]['prop_id'] == 'local_formation.data' and figure_dict:
         return go.Figure(**figure_dict)
 
-    elif any(triggered_input[0]['prop_id'] == x for x in ['formation_graph.clickData', 'formation_dropdown.value']):
-        marker = None
-        if click_data:
-            x = click_data['points'][0]['x']
-            y = click_data['points'][0]['y']
-            marker = (x, y)
+    elif triggered_input[0]['prop_id'] == 'formation_dropdown.value':
+        return plot_formation_web(formation)
+
+    elif triggered_input[0]['prop_id'] == 'formation_graph.clickData':
+        x = click_data['points'][0]['x']
+        y = click_data['points'][0]['y']
+        marker = (x, y)
+
+        global current_well_loc
+        current_well_loc = marker
+
         return plot_formation_web(formation, marker=marker)
 
     else:
-        return dash.no_update
+        return plot_formation_web(formation)
 
 
 @app.callback(

@@ -41,7 +41,6 @@ class InitialParameters(BaseModel):
 
 def explore_simulation(
     well_pos: tuple[float, float],
-    formation='utsirafm',
     show_plot=False,
     eng=None,
     **kwargs
@@ -51,7 +50,6 @@ def explore_simulation(
         eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
         eng.evalc("warning('off', 'all');")
 
-    kwargs.update({'formation': formation})
     initial_parameters = InitialParameters(**kwargs)
 
     initial_parameters.well_position = well_pos
