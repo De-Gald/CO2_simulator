@@ -15,14 +15,7 @@ from reinforcement_learning.nn_policy_web import run_nn_policy_web
 from plotting.plot_formation_web import plot_formation_web
 from plotting.plot_trapping_distribution_web import plot_trapping_distribution
 from simulation.explore_simulation import explore_simulation, YEAR
-
-FORMATIONS = [
-    'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Gassumfm',
-    'Johansenfm', 'Krossfjordfm', 'Pliocenesand',
-    'Sandnesfm', 'Skadefm', 'Sognefjordfm', 'Statfjordfm',
-    'Ulafm', 'Utsirafm', 'Stofm', 'Nordmelafm', 'Tubaenfm',
-    'Bjarmelandfm', 'Arefm', 'Qarnfm', 'Ilefm', 'Tiljefm'
-]
+from simulation.gui import FORMATIONS
 
 OPTIONS = [
     {'label': formation, 'value': formation}
@@ -453,7 +446,7 @@ def _plot_formation_with_well(
         return go.Figure(**figure_dict)
 
     elif triggered_input[0]['prop_id'] == 'formation_dropdown.value':
-        return plot_formation_web(formation)
+        return plot_formation_web(formation, use_trapping=True)
 
     elif triggered_input[0]['prop_id'] == 'formation_graph.clickData':
         x = click_data['points'][0]['x']
@@ -463,10 +456,10 @@ def _plot_formation_with_well(
         global current_well_loc
         current_well_loc = marker
 
-        return plot_formation_web(formation, marker=marker)
+        return plot_formation_web(formation, marker=marker, use_trapping=True)
 
     else:
-        return plot_formation_web(formation)
+        return plot_formation_web(formation, use_trapping=True)
 
 
 @app.callback(

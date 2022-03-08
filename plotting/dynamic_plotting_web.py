@@ -9,7 +9,7 @@ def plot_well_locations_web(
     rewards=None,
     figure_callback=None
 ) -> None:
-    fig = plot_formation_web(formation)
+    fig = plot_formation_web(formation, use_trapping=True)
     well_x = []
     well_y = []
     wells_for_annotation = []

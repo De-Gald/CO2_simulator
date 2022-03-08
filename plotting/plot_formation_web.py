@@ -11,7 +11,8 @@ COLOUR_INTENSITY = 0.85
 
 def plot_formation_web(
     formation: str,
-    marker: Optional[tuple[float, float]] = None
+    marker: Optional[tuple[float, float]] = None,
+    use_trapping=False
 ) -> go.Figure:
     fig = go.Figure(
         layout={
@@ -26,6 +27,7 @@ def plot_formation_web(
     )
 
     vertices_formation = get_vertices(formation, 'faces', 'vertices').tolist()
+    vertices_trapping = get_vertices(formation, 'faces_trapping', 'vertices_trapping')
     _colors_formation = get_colors(formation)
     colors_formation = _colors_formation / COLOUR_INTENSITY / _colors_formation.max()
 
@@ -34,19 +36,10 @@ def plot_formation_web(
         for color in colors_formation
     ]
 
-    xs = []
-    ys = []
-    for figure in vertices_formation:
-        figure_x = []
-        figure_y = []
-        for vertex in figure:
-            figure_x.append(vertex[0])
-            figure_y.append(vertex[1])
-        xs.append(figure_x)
-        ys.append(figure_y)
+    xs_formation, ys_formation = _convert_vertices_to_x_y_arrays(vertices_formation)
 
     i = 0
-    for x, y in zip(xs, ys):
+    for x, y in zip(xs_formation, ys_formation):
         fig.add_trace(
             go.Scatter(
                 x=x,
@@ -62,6 +55,26 @@ def plot_formation_web(
             ),
         )
         i += 1
+
+    if use_trapping:
+        xs_trapping, ys_trapping = _convert_vertices_to_x_y_arrays(vertices_trapping)
+
+        i = 0
+        for x, y in zip(xs_trapping, ys_trapping):
+            fig.add_trace(
+                go.Scatter(
+                    x=x,
+                    y=y,
+                    line={'width': 1.5},
+                    marker={
+                        'opacity': 0,
+                        'color': 'red'
+                    },
+                    showlegend=False,
+                    name=f'Trapping boundary',
+                ),
+            )
+            i += 1
 
     fig.update_layout(
         margin=dict(l=0, r=0, b=0, t=0),
@@ -82,3 +95,19 @@ def plot_formation_web(
         )
 
     return fig
+
+
+def _convert_vertices_to_x_y_arrays(
+    vertices
+) -> [list[list[any]], list[list[any]]]:
+    xs = []
+    ys = []
+    for figure in vertices:
+        figure_x = []
+        figure_y = []
+        for vertex in figure:
+            figure_x.append(vertex[0])
+            figure_y.append(vertex[1])
+        xs.append(figure_x)
+        ys.append(figure_y)
+    return xs, ys

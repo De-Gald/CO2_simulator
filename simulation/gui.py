@@ -7,11 +7,11 @@ from plotting.plot_formation import plot_formation
 from simulation.explore_simulation import explore_simulation
 
 FORMATIONS = [
-    'brentgrp', 'brynefm', 'fensfjordfm', 'gassumfm',
-    'johansenfm', 'krossfjordfm', 'pliocenesand',
-    'sandnesfm', 'skadefm', 'sognefjordfm', 'statfjordfm',
-    'ulafm', 'utsirafm', 'stofm', 'nordmelafm', 'tubaenfm',
-    'bjarmelandfm', 'arefm', 'garnfm', 'ilefm', 'tiljefm'
+    'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Gassumfm',
+    'Johansenfm', 'Krossfjordfm', 'Pliocenesand',
+    'Sandnesfm', 'Skadefm', 'Sognefjordfm', 'Statfjordfm',
+    'Ulafm', 'Utsirafm', 'Stofm', 'Nordmelafm', 'Tubaenfm',
+    'Bjarmelandfm', 'Arefm', 'Garnfm', 'Ilefm', 'Tiljefm'
 ]
 
 
@@ -19,7 +19,7 @@ class GUI:
     def __init__(self):
         self.window = Tk()
         self.window.title('CO2 storage simulator')
-        self.formation = 13
+        self.formation = 12
         self.scatter = None
         self.well_x = 0
         self.well_y = 0
@@ -64,7 +64,7 @@ class GUI:
             highlightthickness=1,
             highlightbackground='#3A7FF6',
             command=lambda: explore_simulation(
-                [(self.well_x, self.well_y)],
+                (self.well_x, self.well_y),
                 formation=FORMATIONS[self.formation],
                 show_plot=True
             )
