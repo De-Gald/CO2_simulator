@@ -8,6 +8,8 @@ from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import numpy as np
 import threading
+
+from reinforcement_learning.basic_policy import run_basic_policy
 from reinforcement_learning.nn_policy import run_nn_policy
 
 from plotting.plot_formation_web import plot_formation_web
@@ -44,6 +46,7 @@ run_smart_well_location = 0
 run_basic_well_location = 0
 
 stop_smart_well_location = [True]
+stop_basic_well_location = [True]
 
 count = 0
 initial_call = True
@@ -366,10 +369,44 @@ def run_simulation(
 
     elif button_pressed == 3:
         global run_basic_well_location
+        global stop_basic_well_location
+
         run_basic_well_location = bool((run_basic_well_location + 1) % 2)
 
+        if run_basic_well_location:
+            trapping_graph = dash.no_update
+            local_trapping = False
+
+            stop_basic_well_location.pop()
+            basic_well_location_thread = threading.Thread(
+                target=run_basic_policy,
+                name='basic_well_location',
+                kwargs={
+                    'formation': formation,
+                    'formation_graph_callback': set_formation_graph_callback,
+                    'trapping_graph_callback': set_trapping_graph_callback,
+                    'stop_basic_well_location': stop_basic_well_location,
+                    'default_rate': injection_rate,
+                    'inj_time': injection_period * YEAR,
+                    'inj_steps': injection_time_steps,
+                    'mig_time': migration_period * YEAR,
+                    'mig_steps': migration_time_steps,
+                    'seafloor_depth': seafloor_depth,
+                    'seafloor_temp': seafloor_temperature,
+                    'water_residual': water_residual,
+                    'co2_residual': co2_residual
+                }
+            )
+            basic_well_location_thread.start()
+        else:
+            stop_basic_well_location.append(True)
+            reset_formation_graph_callback()
+            reset_trapping_graph_callback()
+            trapping_graph = 'Empty graph'
+            local_trapping = True
+
         return (
-            dash.no_update,
+            trapping_graph,
             not run_basic_well_location,
             not run_basic_well_location,
             dash.no_update,
@@ -377,7 +414,7 @@ def run_simulation(
             dash.no_update,
             COLORS[not run_basic_well_location],
             0,
-            dash.no_update
+            local_trapping
         )
 
     if figure_dict:
@@ -390,9 +427,8 @@ def run_simulation(
             dash.no_update,
             dash.no_update,
             dash.no_update,
-            dash.no_update,
+            dash.no_update
         )
-
     else:
         raise PreventUpdate
 

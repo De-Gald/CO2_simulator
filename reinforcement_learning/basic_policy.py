@@ -1,10 +1,9 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Callable
 
 import numpy as np
 import matlab.engine
-from matplotlib import pyplot as plt
 
-from simulation.gui import FORMATIONS, plot_formation
+from simulation.gui import FORMATIONS
 from plotting.dynamic_plotting_web import plot_well_locations_web
 from simulation.explore_simulation import explore_simulation
 from utils import get_vertices
@@ -37,16 +36,17 @@ def basic_policy(
 
 
 def run_basic_policy(
-    formation: str
+    formation_graph_callback: Optional[Callable] = None,
+    trapping_graph_callback: Optional[Callable] = None,
+    stop_basic_well_location: Optional[list[any]] = None,
+    **simulation_parameters
 ) -> [List[int], List[Tuple[int]]]:
     masses = {}
     paths = []
     rewards_different_inits = []
 
     eng = get_matlab_engine()
-
-    plot_formation(formation)
-    plt.show()
+    formation = simulation_parameters['formation']
 
     vertices = get_vertices(formation, 'faces', 'vertices')
     random_centroids = get_random_centroids(vertices, CENTROIDS_COUNT)
@@ -63,11 +63,23 @@ def run_basic_policy(
             list_of_5_locations = list(filter(None, _list_of_5_locations))
             current_masses = {}
             for location in list_of_5_locations:
+                _masses, time = explore_simulation(
+                    location,
+                    eng=eng,
+                    **simulation_parameters
+                )
                 current_masses.update(
                     {
-                        location: explore_simulation(location, formation=formation, eng=eng)
+                        location: _masses
                     }
                 )
+
+                if trapping_graph_callback:
+                    trapping_graph_callback(_masses, time)
+
+                if stop_basic_well_location:
+                    return
+
             masses.update(current_masses)
 
             rewards = get_rewards(current_masses)
@@ -95,7 +107,12 @@ def run_basic_policy(
             rewards_different_inits.append(rewards_step)
         if path:
             paths.append(path)
-            plot_well_locations_web(formation, paths, rewards_different_inits)
+            plot_well_locations_web(
+                formation,
+                paths,
+                rewards_different_inits,
+                figure_callback=formation_graph_callback
+            )
     return rewards_different_inits, paths
 
 
