@@ -9,8 +9,8 @@ import plotly.graph_objects as go
 import numpy as np
 import threading
 
-from reinforcement_learning.basic_policy import run_basic_policy
-from reinforcement_learning.nn_policy import run_nn_policy
+from reinforcement_learning.basic_policy_web import run_basic_policy_web
+from reinforcement_learning.nn_policy_web import run_nn_policy_web
 
 from plotting.plot_formation_web import plot_formation_web
 from plotting.plot_trapping_distribution_web import plot_trapping_distribution
@@ -329,7 +329,7 @@ def run_simulation(
 
             stop_smart_well_location.pop()
             smart_well_location_thread = threading.Thread(
-                target=run_nn_policy,
+                target=run_nn_policy_web,
                 name='smart_well_location',
                 kwargs={
                     'formation': formation,
@@ -379,7 +379,7 @@ def run_simulation(
 
             stop_basic_well_location.pop()
             basic_well_location_thread = threading.Thread(
-                target=run_basic_policy,
+                target=run_basic_policy_web,
                 name='basic_well_location',
                 kwargs={
                     'formation': formation,
