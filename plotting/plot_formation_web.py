@@ -38,22 +38,24 @@ def plot_formation_web(
 
     xs_formation, ys_formation = _convert_vertices_to_x_y_arrays(vertices_formation)
 
+    colorscale = [
+        [0, f'rgb{to_rgb(cm.viridis(min(colors_formation)))}'],
+        [0.5, f'rgb{to_rgb(cm.viridis(sum(colors_formation) / len(colors_formation)))}'],
+        [1, f'rgb{to_rgb(cm.viridis(max(colors_formation)))}']
+    ]
+
     i = 0
+    marker_without_colorbar = {'opacity': 0}
     for x, y in zip(xs_formation, ys_formation):
-        fig.add_trace(
-            go.Scatter(
-                x=x,
-                y=y,
-                fill='toself',
-                fillcolor=f'rgb{color_tuples[i]}',
-                line={'width': 0},
-                marker={
-                    'opacity': 0,
-                },
-                showlegend=False,
-                name=f'Cell {i}',
-            ),
-        )
+        if i == 0:
+            marker_with_colorbar = {
+                'colorscale': colorscale,
+                'colorbar': {'title': 'Depth'},
+                'color': _colors_formation,
+                'opacity': 0
+            }
+            _add_trace(fig, x, y, i, marker_with_colorbar, color_tuples[i])
+        _add_trace(fig, x, y, i, marker_without_colorbar, color_tuples[i])
         i += 1
 
     if use_trapping:
@@ -77,7 +79,7 @@ def plot_formation_web(
             i += 1
 
     fig.update_layout(
-        margin=dict(l=0, r=0, b=0, t=0),
+        margin=dict(l=0, r=0, b=0, t=0)
     )
 
     if marker:
@@ -95,6 +97,28 @@ def plot_formation_web(
         )
 
     return fig
+
+
+def _add_trace(
+    figure: go.Figure,
+    x: list[float],
+    y: list[float],
+    i: int,
+    marker: dict[str, any],
+    fillcolor: tuple[int, int, int]
+) -> None:
+    figure.add_trace(
+        go.Scatter(
+            x=x,
+            y=y,
+            fill='toself',
+            fillcolor=f'rgb{fillcolor}',
+            line={'width': 0},
+            marker=marker,
+            showlegend=False,
+            name=f'Cell {i}'
+        ),
+    )
 
 
 def _convert_vertices_to_x_y_arrays(
