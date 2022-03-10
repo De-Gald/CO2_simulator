@@ -1,4 +1,5 @@
 from typing import Optional
+from copy import deepcopy
 
 import dash
 from dash import dcc, html
@@ -151,6 +152,12 @@ app.layout = dbc.Container(
                                                     id='migration_time_steps',
                                                     value=5,
                                                     type='number'
+                                                ),
+                                                dcc.Checklist(
+                                                    id='traps_checkbox',
+                                                    options={
+                                                        'traps': 'Show traps',
+                                                    }
                                                 )
                                             ],
                                             width=6
@@ -340,7 +347,10 @@ def run_simulation(
             trapping_graph = dash.no_update
             local_trapping = False
 
+            reset_formation_graph()
+            reset_trapping_graph()
             stop_smart_well_location.pop()
+
             smart_well_location_thread = threading.Thread(
                 target=run_nn_policy_web,
                 name='smart_well_location',
@@ -391,7 +401,10 @@ def run_simulation(
             trapping_graph = dash.no_update
             local_trapping = False
 
+            reset_formation_graph()
+            reset_trapping_graph()
             stop_basic_well_location.pop()
+
             basic_well_location_thread = threading.Thread(
                 target=run_basic_policy_web,
                 name='basic_well_location',
@@ -454,22 +467,31 @@ def run_simulation(
     [
         Input('formation_graph', 'clickData'),
         Input('formation_dropdown', 'value'),
-        Input('local_formation', 'data')
+        Input('local_formation', 'data'),
+        Input('traps_checkbox', 'value')
     ],
+    State('formation_graph', 'figure')
 )
 def _plot_formation_with_well(
     click_data: Optional[dict[str, list[dict[str, float]]]],
     formation: str,
-    figure_dict: dict[str, any]
+    figure_dict: dict[str, any],
+    traps: list[str],
+    current_figure: dict[str, any]
 ) -> [go.Figure, bool]:
     ctx = dash.callback_context
     triggered_input = ctx.triggered
+
+    use_trapping = True if traps else False
+
+    global previous_formation_graph
 
     if triggered_input[0]['prop_id'] == 'local_formation.data' and figure_dict:
         return go.Figure(**figure_dict)
 
     elif triggered_input[0]['prop_id'] == 'formation_dropdown.value':
-        return plot_formation_web(formation, use_trapping=True)
+        previous_formation_graph = plot_formation_web(formation).to_dict()
+        return plot_formation_web(formation, use_trapping=use_trapping)
 
     elif triggered_input[0]['prop_id'] == 'formation_graph.clickData':
         x = click_data['points'][0]['x']
@@ -479,10 +501,18 @@ def _plot_formation_with_well(
         global current_well_loc
         current_well_loc = marker
 
-        return plot_formation_web(formation, marker=marker, use_trapping=True)
+        previous_formation_graph = plot_formation_web(formation, marker=marker).to_dict()
+        return plot_formation_web(formation, marker=marker, use_trapping=use_trapping)
+
+    elif triggered_input[0]['prop_id'] == 'traps_checkbox.value':
+        if use_trapping:
+            previous_formation_graph = current_figure
+            return plot_formation_web(formation, use_trapping=use_trapping, current_figure=current_figure)
+        else:
+            return go.Figure(**previous_formation_graph)
 
     else:
-        return plot_formation_web(formation, use_trapping=True)
+        return plot_formation_web(formation, use_trapping=use_trapping)
 
 
 @app.callback(
@@ -494,9 +524,15 @@ def dynamic_figure_update(
     n_intervals: int
 ) -> dict[str, any]:
     global previous_formation_graph
+    formation_graph_with_colorbar = {}
+
+    if formation_graph:
+        formation_graph_with_colorbar = deepcopy(formation_graph)
+        del formation_graph['data'][0]  # delete first cell with colorbar
+
     if formation_graph != previous_formation_graph:
         previous_formation_graph = formation_graph
-        return formation_graph
+        return formation_graph_with_colorbar
     else:
         return dash.no_update
 
