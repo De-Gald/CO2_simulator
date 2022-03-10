@@ -8,7 +8,9 @@ from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import numpy as np
 import threading
+import pandas as pd
 
+from plotting.plot_trapping_distribution import LABELS
 from reinforcement_learning.basic_policy_web import run_basic_policy_web
 from reinforcement_learning.nn_policy_web import run_nn_policy_web
 
@@ -122,66 +124,74 @@ app.layout = dbc.Container(
                                     step=1,
                                     value=1,
                                 ),
-                                dbc.Row([
-                                    dbc.Col(
-                                        [
-                                            dbc.Label('Injection period', size='md'),
-                                            dcc.Input(
-                                                id='injection_period',
-                                                value=10,
-                                                type='number'
-                                            ),
-                                            dbc.Label('Injection time steps', size='md'),
-                                            dcc.Input(
-                                                id='injection_time_steps',
-                                                value=5,
-                                                type='number'
-                                            ),
-                                            dbc.Label('Migration period', size='md'),
-                                            dcc.Input(
-                                                id='migration_period',
-                                                value=10,
-                                                type='number'
-                                            ),
-                                            dbc.Label('Migration time steps', size='md'),
-                                            dcc.Input(
-                                                id='migration_time_steps',
-                                                value=5,
-                                                type='number'
-                                            ),
-                                        ],
-                                        width=6
-                                    ),
-                                    dbc.Col(
-                                        [
-                                            dbc.Label('Seafloor depth', size='md'),
-                                            dcc.Input(
-                                                id='seafloor_depth',
-                                                value=100,
-                                                type='number'
-                                            ),
-                                            dbc.Label('Seafloor temperature', size='md'),
-                                            dcc.Input(
-                                                id='seafloor_temperature',
-                                                value=7,
-                                                type='number'
-                                            ),
-                                            dbc.Label('Water residual', size='md'),
-                                            dcc.Input(
-                                                id='water_residual',
-                                                value=0.11,
-                                                type='number'
-                                            ),
-                                            dbc.Label('CO2 residual', size='md'),
-                                            dcc.Input(
-                                                id='co2_residual',
-                                                value=0.21,
-                                                type='number'
-                                            ),
-                                        ],
-                                        width=6
-                                    ),
-                                ]),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            [
+                                                dbc.Label('Injection period', size='md'),
+                                                dcc.Input(
+                                                    id='injection_period',
+                                                    value=10,
+                                                    type='number'
+                                                ),
+                                                dbc.Label('Injection time steps', size='md'),
+                                                dcc.Input(
+                                                    id='injection_time_steps',
+                                                    value=5,
+                                                    type='number'
+                                                ),
+                                                dbc.Label('Migration period', size='md'),
+                                                dcc.Input(
+                                                    id='migration_period',
+                                                    value=10,
+                                                    type='number'
+                                                ),
+                                                dbc.Label('Migration time steps', size='md'),
+                                                dcc.Input(
+                                                    id='migration_time_steps',
+                                                    value=5,
+                                                    type='number'
+                                                )
+                                            ],
+                                            width=6
+                                        ),
+                                        dbc.Col(
+                                            [
+                                                dbc.Label('Seafloor depth', size='md'),
+                                                dcc.Input(
+                                                    id='seafloor_depth',
+                                                    value=100,
+                                                    type='number'
+                                                ),
+                                                dbc.Label('Seafloor temperature', size='md'),
+                                                dcc.Input(
+                                                    id='seafloor_temperature',
+                                                    value=7,
+                                                    type='number'
+                                                ),
+                                                dbc.Label('Water residual', size='md'),
+                                                dcc.Input(
+                                                    id='water_residual',
+                                                    value=0.11,
+                                                    type='number'
+                                                ),
+                                                dbc.Label('CO2 residual', size='md'),
+                                                dcc.Input(
+                                                    id='co2_residual',
+                                                    value=0.21,
+                                                    type='number'
+                                                ),
+                                                dcc.Checklist(
+                                                    id='download_checkbox',
+                                                    options={
+                                                        'download': 'Download results',
+                                                    }
+                                                )
+                                            ],
+                                            width=6
+                                        ),
+                                    ]
+                                )
                             ]
                         ),
                         html.Hr(),
@@ -209,7 +219,8 @@ app.layout = dbc.Container(
                                     disabled=True
                                 ),
                                 dcc.Store(id='local_formation'),
-                                dcc.Store(id='local_trapping')
+                                dcc.Store(id='local_trapping'),
+                                dcc.Download(id='download_simulation_results')
                             ]
                         )
                     ],
@@ -226,6 +237,7 @@ app.layout = dbc.Container(
 @app.callback(
     [
         Output('trapping_graph', 'figure'),
+        Output('download_simulation_results', 'data'),
         Output('formation_updater', 'disabled'),
         Output('trapping_graph_updater', 'disabled'),
         Output('simulation', 'n_clicks_timestamp'),
@@ -251,7 +263,8 @@ app.layout = dbc.Container(
         State('seafloor_depth', 'value'),
         State('seafloor_temperature', 'value'),
         State('water_residual', 'value'),
-        State('co2_residual', 'value')
+        State('co2_residual', 'value'),
+        State('download_checkbox', 'value')
     ],
     prevent_initial_call=True
 )
@@ -269,7 +282,8 @@ def run_simulation(
     seafloor_depth: float,
     seafloor_temperature: float,
     water_residual: float,
-    co2_residual: float
+    co2_residual: float,
+    download_checkbox: list[str]
 ) -> [go.Figure, bool]:
     button_pressed = np.argmax(
         np.array(
@@ -298,8 +312,14 @@ def run_simulation(
         )
         output = plot_trapping_distribution(masses, time)
 
+        download = dash.no_update
+        if download_checkbox:
+            df = pd.DataFrame(masses, columns=time // YEAR, index=LABELS)
+            download = dcc.send_data_frame(df.to_csv, "masses.csv")
+
         return (
             output,
+            download,
             dash.no_update,
             dash.no_update,
             0,
@@ -343,13 +363,14 @@ def run_simulation(
             smart_well_location_thread.start()
         else:
             stop_smart_well_location.append(True)
-            reset_formation_graph_callback()
-            reset_trapping_graph_callback()
+            reset_formation_graph()
+            reset_trapping_graph()
             trapping_graph = 'Empty graph'
             local_trapping = True
 
         return (
             trapping_graph,
+            dash.no_update,
             not run_smart_well_location,
             not run_smart_well_location,
             dash.no_update,
@@ -393,13 +414,14 @@ def run_simulation(
             basic_well_location_thread.start()
         else:
             stop_basic_well_location.append(True)
-            reset_formation_graph_callback()
-            reset_trapping_graph_callback()
+            reset_formation_graph()
+            reset_trapping_graph()
             trapping_graph = 'Empty graph'
             local_trapping = True
 
         return (
             trapping_graph,
+            dash.no_update,
             not run_basic_well_location,
             not run_basic_well_location,
             dash.no_update,
@@ -413,6 +435,7 @@ def run_simulation(
     if figure_dict:
         return (
             go.Figure(**figure_dict),
+            dash.no_update,
             dash.no_update,
             dash.no_update,
             dash.no_update,
@@ -498,14 +521,14 @@ def dynamic_trapping_graph_update(
         return dash.no_update
 
 
-def reset_formation_graph_callback() -> None:
+def reset_formation_graph() -> None:
     global previous_formation_graph
     global formation_graph
     previous_formation_graph = {}
     formation_graph = {}
 
 
-def reset_trapping_graph_callback() -> None:
+def reset_trapping_graph() -> None:
     global previous_trapping_masses
     global trapping_masses
     previous_trapping_masses = []

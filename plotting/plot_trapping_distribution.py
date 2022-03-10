@@ -7,6 +7,15 @@ HOUR = 60 * MINUTE
 DAY = 24 * HOUR
 YEAR = 365 * DAY
 
+LABELS = [
+    'Structural residual',
+    'Residual',
+    'Residual in plume',
+    'Structural plume',
+    'Free plume',
+    'Exited'
+]
+
 
 def plot_trapping_distribution(
     masses_np: np.array,
@@ -16,15 +25,6 @@ def plot_trapping_distribution(
     t_years = t_np // YEAR
 
     if show_plot:
-        labels = [
-            'Structural residual',
-            'Residual',
-            'Residual in plume',
-            'Structural plume',
-            'Free plume',
-            'Exited'
-        ]
-
         color_map = ['#2BBD00', '#97A5FF', '#9FFF59', '#FFF51D', '#FE9B49', '#D90000']
 
         plt.close('all')
@@ -32,7 +32,7 @@ def plot_trapping_distribution(
             plt.stackplot(t_years, masses_np, colors=color_map)
             plt.autoscale(enable=True, axis='both', tight=True)
             plt.xlabel('Years since simulation start', fontsize=11)
-            plt.legend(labels, loc='upper left')
+            plt.legend(LABELS, loc='upper left')
             plt.ylabel('Mass (MT)', fontsize=11)
             plt.show()
         except ValueError:
