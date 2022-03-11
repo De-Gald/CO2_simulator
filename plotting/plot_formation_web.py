@@ -80,7 +80,7 @@ def plot_formation_web(
         )
 
     if use_trapping:
-        vertices_trapping = get_vertices(formation, 'faces_trapping', 'vertices_trapping')
+        vertices_trapping = get_vertices(formation, 'faces_trapping', 'vertices')
         xs_trapping, ys_trapping = _convert_vertices_to_x_y_arrays(vertices_trapping)
 
         i = 0
