@@ -323,8 +323,7 @@ def run_simulation(
 
         download = dash.no_update
         if download_checkbox:
-            df = pd.DataFrame(masses, columns=time // YEAR, index=LABELS)
-            download = dcc.send_data_frame(df.to_csv, "masses.csv")
+            download = _create_download_csv(masses, time)
 
         return (
             output,
@@ -462,6 +461,14 @@ def run_simulation(
         )
     else:
         raise PreventUpdate
+
+
+def _create_download_csv(
+    masses: np.array,
+    time: np.array
+) -> dict[str, any]:
+    df = pd.DataFrame(masses, columns=time // YEAR, index=LABELS)
+    return dcc.send_data_frame(df.to_csv, "masses.csv")
 
 
 @app.callback(
