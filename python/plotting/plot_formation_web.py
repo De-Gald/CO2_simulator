@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from matplotlib import cm
 from matplotlib.colors import to_rgb
 
-from python.utils import get_colors, get_vertices
+from python.db_client.mongo_client import MongoDBClient
 
 COLOUR_INTENSITY = 0.85
 
@@ -15,6 +15,8 @@ def plot_formation_web(
     use_trapping=False,
     current_figure: Optional[dict[str, any]] = None
 ) -> go.Figure:
+    mongo_client = MongoDBClient('co2sim')
+
     if current_figure:
         fig = go.Figure(**current_figure)
     else:
@@ -30,8 +32,8 @@ def plot_formation_web(
             }
         )
 
-        vertices_formation = get_vertices(formation, 'faces', 'vertices').tolist()
-        _colors_formation = get_colors(formation)
+        vertices_formation = mongo_client.get_vertices(formation, 'faces').tolist()
+        _colors_formation = mongo_client.get_colors(formation, 'depths')
         colors_formation = _colors_formation / COLOUR_INTENSITY / _colors_formation.max()
 
         color_tuples = [
@@ -80,7 +82,7 @@ def plot_formation_web(
         )
 
     if use_trapping:
-        vertices_trapping = get_vertices(formation, 'faces_trapping', 'vertices')
+        vertices_trapping = mongo_client.get_vertices(formation, 'faces_trapping')
         xs_trapping, ys_trapping = _convert_vertices_to_x_y_arrays(vertices_trapping)
 
         i = 0

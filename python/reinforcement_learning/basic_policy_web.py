@@ -3,10 +3,10 @@ from typing import Dict, List, Optional, Tuple, Callable
 import numpy as np
 import matlab.engine
 
+from python.db_client.mongo_client import MongoDBClient
 from python.simulation.gui import FORMATIONS
 from python.plotting.dynamic_plotting_web import plot_well_locations_web
 from python.simulation.explore_simulation import explore_simulation
-from python.utils import get_vertices
 
 STRUCTURAL_RESIDUAL = 0
 RESIDUAL = 1
@@ -48,7 +48,8 @@ def run_basic_policy_web(
     eng = get_matlab_engine()
     formation = simulation_parameters['formation']
 
-    vertices = get_vertices(formation, 'faces', 'vertices')
+    mongo_client = MongoDBClient('co2sim')
+    vertices = mongo_client.get_vertices(formation, 'faces')
     random_centroids = get_random_centroids(vertices, CENTROIDS_COUNT)
 
     for episode_count, centroid in enumerate(random_centroids):

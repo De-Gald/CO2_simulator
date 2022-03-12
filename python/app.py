@@ -24,7 +24,7 @@ OPTIONS = [
     {'label': formation, 'value': formation}
     for formation in FORMATIONS
 ]
-DEFAULT_FORMATION = FORMATIONS[13]
+DEFAULT_FORMATION = FORMATIONS[16]
 COLORS = ['primary', 'secondary']
 
 app = dash.Dash(external_stylesheets=[dbc.themes.MINTY])

@@ -3,3 +3,7 @@ matplotlib==3.5.0
 numpy==1.21.2
 pydantic==1.9.0
 tensorflow==2.8.0
+dash==2.2.0
+pandas==1.4.1
+plotly==5.6.0
+pymongo==4.0.2

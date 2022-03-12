@@ -7,11 +7,9 @@ from python.plotting.plot_formation import plot_formation
 from python.simulation.explore_simulation import explore_simulation
 
 FORMATIONS = [
-    'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Gassumfm',
-    'Johansenfm', 'Krossfjordfm', 'Pliocenesand',
-    'Sandnesfm', 'Skadefm', 'Sognefjordfm', 'Statfjordfm',
-    'Ulafm', 'Utsirafm', 'Stofm', 'Nordmelafm', 'Tubaenfm',
-    'Bjarmelandfm', 'Arefm', 'Garnfm', 'Ilefm', 'Tiljefm'
+    'Arefm', 'Bjarmelandfm', 'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Garnfm', 'Gassumfm', 'Ilefm',
+    'Johansenfm', 'Krossfjordfm', 'Nordmelafm', 'Pliocenesand', 'Sandnesfm', 'Skadefm', 'Sognefjordfm',
+    'Statfjordfm', 'Stofm', 'Tiljefm', 'Tubaenfm', 'Ulafm', 'Utsirafm'
 ]
 
 

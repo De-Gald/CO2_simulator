@@ -4,6 +4,7 @@ import numpy as np
 import matlab.engine
 from typing import List, Callable, Optional
 
+from python.db_client.mongo_client import MongoDBClient
 from python.simulation.gui import FORMATIONS
 from python.simulation.explore_simulation import explore_simulation
 from python.reinforcement_learning.basic_policy_web import (
@@ -12,7 +13,6 @@ from python.reinforcement_learning.basic_policy_web import (
     get_rewards,
 )
 from python.plotting.dynamic_plotting_web import plot_well_locations_web
-from python.utils import get_vertices
 
 
 def run_one_step(
@@ -81,7 +81,8 @@ def run_multiple_episodes(
 
     eng = get_matlab_engine()
 
-    vertices = get_vertices(simulation_parameters['formation'], 'faces', 'vertices')
+    mongo_client = MongoDBClient('co2sim')
+    vertices = mongo_client.get_vertices(simulation_parameters['formation'], 'faces')
     random_centroids = get_random_centroids(vertices, n_episodes)
 
     for centroid in random_centroids:
