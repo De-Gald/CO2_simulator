@@ -1,3 +1,4 @@
+from python.db_client.mongo_client import MongoDBClient
 from python.simulation.gui import FORMATIONS
 from python.plotting.plot_formation_web import plot_formation_web
 import plotly.graph_objects as go
@@ -5,11 +6,12 @@ import plotly.graph_objects as go
 
 def plot_well_locations_web(
     formation: str,
+    mongo_client: MongoDBClient,
     well_locs=None,
     rewards=None,
     figure_callback=None
 ) -> None:
-    fig = plot_formation_web(formation)
+    fig = plot_formation_web(formation, mongo_client)
     well_x = []
     well_y = []
     wells_for_annotation = []

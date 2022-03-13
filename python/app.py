@@ -11,6 +11,7 @@ import numpy as np
 import threading
 import pandas as pd
 
+from python.db_client.mongo_client import MongoDBClient
 from python.plotting.plot_trapping_distribution import LABELS
 from python.reinforcement_learning.basic_policy_web import run_basic_policy_web
 from python.reinforcement_learning.nn_policy_web import run_nn_policy_web
@@ -26,6 +27,8 @@ OPTIONS = [
 ]
 DEFAULT_FORMATION = FORMATIONS[16]
 COLORS = ['primary', 'secondary']
+
+MONGO_CLIENT = MongoDBClient('co2sim')
 
 app = dash.Dash(external_stylesheets=[dbc.themes.MINTY])
 app.title = 'CO2 storage simulator'
@@ -317,7 +320,8 @@ def run_simulation(
             seafloor_depth=seafloor_depth,
             seafloor_temp=seafloor_temperature,
             water_residual=water_residual,
-            co2_residual=co2_residual
+            co2_residual=co2_residual,
+            mongo_client=MONGO_CLIENT
         )
         output = plot_trapping_distribution(masses, time)
 
@@ -368,7 +372,8 @@ def run_simulation(
                     'seafloor_depth': seafloor_depth,
                     'seafloor_temp': seafloor_temperature,
                     'water_residual': water_residual,
-                    'co2_residual': co2_residual
+                    'co2_residual': co2_residual,
+                    'mongo_client': MONGO_CLIENT
                 }
             )
             smart_well_location_thread.start()
@@ -499,8 +504,8 @@ def _plot_formation_with_well(
         return go.Figure(**figure_dict)
 
     elif triggered_input[0]['prop_id'] == 'formation_dropdown.value':
-        previous_formation_graph = plot_formation_web(formation).to_dict()
-        return plot_formation_web(formation, use_trapping=use_trapping)
+        previous_formation_graph = plot_formation_web(formation, MONGO_CLIENT).to_dict()
+        return plot_formation_web(formation, MONGO_CLIENT, use_trapping=use_trapping)
 
     elif triggered_input[0]['prop_id'] == 'formation_graph.clickData':
         x = click_data['points'][0]['x']
@@ -510,18 +515,18 @@ def _plot_formation_with_well(
         global current_well_loc
         current_well_loc = marker
 
-        previous_formation_graph = plot_formation_web(formation, marker=marker).to_dict()
-        return plot_formation_web(formation, marker=marker, use_trapping=use_trapping)
+        previous_formation_graph = plot_formation_web(formation, MONGO_CLIENT, marker=marker).to_dict()
+        return plot_formation_web(formation, MONGO_CLIENT, marker=marker, use_trapping=use_trapping)
 
     elif triggered_input[0]['prop_id'] == 'traps_checkbox.value':
         if use_trapping:
             previous_formation_graph = current_figure
-            return plot_formation_web(formation, use_trapping=use_trapping, current_figure=current_figure)
+            return plot_formation_web(formation, MONGO_CLIENT, use_trapping=use_trapping, current_figure=current_figure)
         else:
             return go.Figure(**previous_formation_graph)
 
     else:
-        return plot_formation_web(formation, use_trapping=use_trapping)
+        return plot_formation_web(formation, MONGO_CLIENT, use_trapping=use_trapping)
 
 
 @app.callback(

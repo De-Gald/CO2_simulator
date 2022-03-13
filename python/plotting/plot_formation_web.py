@@ -11,12 +11,11 @@ COLOUR_INTENSITY = 0.85
 
 def plot_formation_web(
     formation: str,
+    mongo_client: MongoDBClient,
     marker: Optional[tuple[float, float]] = None,
     use_trapping=False,
     current_figure: Optional[dict[str, any]] = None
 ) -> go.Figure:
-    mongo_client = MongoDBClient('co2sim')
-
     if current_figure:
         fig = go.Figure(**current_figure)
     else:

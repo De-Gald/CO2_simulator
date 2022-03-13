@@ -1,10 +1,12 @@
+from typing import Optional
+
 import matlab.engine
 import numpy as np
 from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel
 
 from python.db_client.mongo_client import MongoDBClient
-from python.plotting.plot_trapping_distribution import plot_trapping_distribution, LABELS
+from python.plotting.plot_trapping_distribution import plot_trapping_distribution
 
 YEAR = 3600 * 24 * 365.2425
 KILOGRAM = 1000
@@ -48,27 +50,28 @@ class InitialParameters(BaseModel):
 
 def explore_simulation(
     well_pos: tuple[float, float],
+    mongo_client: Optional[MongoDBClient] = None,
     show_plot=False,
     eng=None,
     **kwargs
 ) -> (np.array, np.array):
-    mongo_client = MongoDBClient('co2sim')
-
     if not eng:
         eng = matlab.engine.start_matlab()
         eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
         eng.evalc("warning('off', 'all');")
 
     initial_parameters = InitialParameters(**kwargs)
+
+    if mongo_client:
+        result = mongo_client.db.results.find_one({
+            'well_location': well_pos,
+            'simulation_parameters': initial_parameters.dict(exclude={'formation'})
+        })
+
+        if result:
+            return np.array(result['result']['masses']), np.array(result['result']['time'])
+
     initial_parameters.well_position = well_pos
-
-    result = mongo_client.db.results.find_one({
-        'well_location': well_pos,
-        'simulation_parameters': initial_parameters.dict()
-    })
-
-    if result:
-        return np.array(result['result']['masses']), np.array(result['result']['time'])
 
     eng.workspace['initial_parameters'] = initial_parameters.dict()
     masses_new, t, sol, w = eng.eval(
@@ -79,19 +82,19 @@ def explore_simulation(
     masses_np = _convert_masses_to_mega(_masses_np)
     plot_trapping_distribution(masses_np, t_np, show_plot=show_plot)
 
-    result = {
-        'formation_id': FORMATIONS.index(initial_parameters.formation),
-        'well_location': well_pos,
-        'simulation_parameters': initial_parameters.dict(),
-        'result': {'masses': masses_np.tolist(), 'time': t_np.tolist()}
-    }
+    if mongo_client:
+        result = {
+            'formation_id': FORMATIONS.index(initial_parameters.formation),
+            'well_location': well_pos,
+            'simulation_parameters': initial_parameters.dict(exclude={'formation', 'well_position'}),
+            'result': {'masses': masses_np.tolist(), 'time': t_np.tolist()}
+        }
 
-    try:
-        result_id = mongo_client.db.results.insert_one(result).inserted_id
-    except DuplicateKeyError:
-        print('The result is already saved')
-    else:
-        print(result_id)
+        try:
+            result_id = mongo_client.db.results.insert_one(result).inserted_id
+            print(f'Result {result_id} is successfully saved')
+        except DuplicateKeyError:
+            print('The result is already saved')
 
     return masses_np, t_np
 

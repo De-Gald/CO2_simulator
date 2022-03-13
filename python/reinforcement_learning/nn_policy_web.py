@@ -3,6 +3,7 @@ from tensorflow import keras
 import numpy as np
 import matlab.engine
 from typing import List, Callable, Optional
+import json
 
 from python.db_client.mongo_client import MongoDBClient
 from python.simulation.gui import FORMATIONS
@@ -22,6 +23,7 @@ def run_one_step(
     model: keras.models.Sequential,
     loss_fn: keras.losses.binary_crossentropy,
     eng: matlab.engine,
+    mongo_client: MongoDBClient,
     trapping_graph_callback: Optional[Callable] = None,
     simulation_parameters: Optional[dict[str, any]] = None
 ) -> [float, float, np.array, int, bool, List[tf.Tensor]]:
@@ -45,6 +47,7 @@ def run_one_step(
     grads = tape.gradient(loss, model.trainable_variables)
     masses, time = explore_simulation(
         (x, y),
+        mongo_client=mongo_client,
         eng=eng,
         **simulation_parameters
     )
@@ -55,7 +58,7 @@ def run_one_step(
     masses_dict = {
         (x, y): masses
     }
-    reward = get_rewards(masses_dict)[0]
+    reward = int((get_rewards(masses_dict)[0]))
     masses = masses_dict[(x, y)].flatten()
 
     done = False
@@ -66,6 +69,7 @@ def run_one_step(
 
 
 def run_multiple_episodes(
+    mongo_client: MongoDBClient,
     n_episodes: int,
     n_max_steps: int,
     model: keras.models,
@@ -81,7 +85,6 @@ def run_multiple_episodes(
 
     eng = get_matlab_engine()
 
-    mongo_client = MongoDBClient('co2sim')
     vertices = mongo_client.get_vertices(simulation_parameters['formation'], 'faces')
     random_centroids = get_random_centroids(vertices, n_episodes)
 
@@ -94,6 +97,7 @@ def run_multiple_episodes(
         x, y = centroid
         _masses, time = explore_simulation(
             (x, y),
+            mongo_client=mongo_client,
             eng=eng,
             **simulation_parameters
         )
@@ -108,7 +112,7 @@ def run_multiple_episodes(
                 return None, None
 
             x, y, masses, reward, done, grads = run_one_step(
-                x, y, masses, model, loss_fn, eng,
+                x, y, masses, model, loss_fn, eng, mongo_client,
                 trapping_graph_callback=trapping_graph_callback,
                 simulation_parameters=simulation_parameters
             )
@@ -126,6 +130,7 @@ def run_multiple_episodes(
             paths.append(path)
             plot_well_locations_web(
                 simulation_parameters['formation'],
+                mongo_client,
                 paths,
                 iteration_rewards,
                 figure_callback=formation_graph_callback
@@ -166,9 +171,11 @@ def discount_and_normalize_rewards(
 
 
 def run_nn_policy_web(
+    mongo_client: MongoDBClient,
     formation_graph_callback: Optional[Callable] = None,
     trapping_graph_callback: Optional[Callable] = None,
     stop_smart_well_location: Optional[list[any]] = None,
+    load_last_model=True,
     **kwargs
 ) -> None:
     n_inputs = 66
@@ -179,11 +186,27 @@ def run_nn_policy_web(
     n_max_steps = 10
     discount_rate = 0.99
 
-    model = keras.models.Sequential([
-        keras.layers.Dense(35, activation="tanh", input_shape=[n_inputs]),
-        keras.layers.Dense(35, activation="tanh"),
-        keras.layers.Dense(n_outputs, activation="softmax"),
-    ])
+    model = None
+    if load_last_model:
+        try:
+            model_data = mongo_client.db.models.find_one(sort=[('_id', -1)])
+
+            model_dict = model_data['model']
+            weights = model_data['weights']
+
+            model = tf.keras.models.model_from_json(json.dumps(model_dict))
+
+            for idx, layer_weights in enumerate(weights):
+                model.trainable_variables[idx].assign(layer_weights)
+        except:
+            print("Couldn't load the model")
+
+    if not model:
+        model = keras.models.Sequential([
+            keras.layers.Dense(35, activation="tanh", input_shape=[n_inputs]),
+            keras.layers.Dense(35, activation="tanh"),
+            keras.layers.Dense(n_outputs, activation="softmax"),
+        ])
 
     loss_fn = keras.losses.sparse_categorical_crossentropy
     optimizer = keras.optimizers.Nadam(learning_rate=0.005)
@@ -192,6 +215,7 @@ def run_nn_policy_web(
 
     for iteration in range(n_iterations):
         iteration_rewards, iteration_grads = run_multiple_episodes(
+            mongo_client,
             n_episodes_per_update,
             n_max_steps,
             model,
@@ -227,6 +251,36 @@ def run_nn_policy_web(
             all_mean_grads.append(mean_grads)
         optimizer.apply_gradients(zip(all_mean_grads, model.trainable_variables))
 
+        model_id = None
+        try:
+            weights = model.get_weights()
+            weights_serializable = [el.tolist() for el in weights]
+
+            model_to_save = {
+                'model': json.loads(model.to_json()),
+                'weights': weights_serializable
+            }
+
+            model_id = mongo_client.db.models.insert_one(model_to_save).inserted_id
+            if model_id:
+                print(f'Model {model_id} is successfully added')
+        except:
+            print("Couldn't save model to mongo db")
+
+        if model_id:
+            try:
+                metrics = {
+                    '_id': model_id,
+                    'iteration_rewards': iteration_rewards,
+                    'mean_reward': mean_reward,
+                    'sum_reward': sum(map(sum, iteration_rewards))
+                }
+
+                if mongo_client.db.metrics.insert_one(metrics).inserted_id:
+                    print(f'Metrics {model_id} are successfully added')
+            except:
+                print("Couldn't save metrics to mongo db")
+
 
 if __name__ == '__main__':
-    run_nn_policy_web(FORMATIONS[13])
+    run_nn_policy_web(MongoDBClient('co2sim'), formation=FORMATIONS[16])
