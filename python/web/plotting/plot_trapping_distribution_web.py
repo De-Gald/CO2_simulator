@@ -7,6 +7,15 @@ HOUR = 60 * MINUTE
 DAY = 24 * HOUR
 YEAR = 365 * DAY
 
+LABELS = [
+    'Structural residual',
+    'Residual',
+    'Residual in plume',
+    'Structural plume',
+    'Free plume',
+    'Exited'
+]
+
 
 def plot_trapping_distribution(
     masses_np: np.array,

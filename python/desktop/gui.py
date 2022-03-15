@@ -3,8 +3,8 @@ import tkinter as tk
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from python.plotting.plot_formation import plot_formation
-from python.simulation.explore_simulation import explore_simulation
+from python.desktop.plotting.plot_formation import plot_formation
+from python.desktop.simulation.explore_simulation import explore_simulation
 
 FORMATIONS = [
     'Arefm', 'Bjarmelandfm', 'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Garnfm', 'Gassumfm', 'Ilefm',

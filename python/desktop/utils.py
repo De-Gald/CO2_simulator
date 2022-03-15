@@ -5,15 +5,14 @@ import os
 
 def get_vertices(
     formation: str,
-    faces_file: str,
-    vertices_file: str
+    faces_file: str
 ) -> np.array:
     faces = genfromtxt(
         f'{os.path.dirname(__file__)}/formations/{formation}/{faces_file}.csv',
         delimiter=','
     )
     _vertices = genfromtxt(
-        f'{os.path.dirname(__file__)}/formations/{formation}/{vertices_file}.csv',
+        f'{os.path.dirname(__file__)}/formations/{formation}/vertices.csv',
         delimiter=','
     )
 

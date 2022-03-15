@@ -1,13 +1,17 @@
 from numpy import genfromtxt
+import numpy as np
 import json
 import os
 
-from python.simulation.gui import FORMATIONS
+from python.desktop.gui import FORMATIONS
 
 
-def get_csv_file(formation, file):
+def get_csv_file(
+    formation_name: str,
+    file: str
+) -> np.Array:
     return genfromtxt(
-        f'python/formations/{formation}/{file}.csv',
+        f'python/desktop/formations/{formation_name}/{file}.csv',
         delimiter=','
     )
 

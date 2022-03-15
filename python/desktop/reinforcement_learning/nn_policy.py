@@ -5,16 +5,16 @@ import numpy as np
 import matlab.engine
 from typing import List
 
-from python.plotting.dynamic_plotting import plot_well_locations
-from python.plotting.plot_formation import plot_formation
-from python.simulation.explore_simulation import explore_simulation
-from python.reinforcement_learning.basic_policy_web import (
+from python.desktop.plotting.dynamic_plotting import plot_well_locations
+from python.desktop.plotting.plot_formation import plot_formation
+from python.desktop.simulation.explore_simulation import explore_simulation
+from python.desktop.reinforcement_learning.basic_policy import (
     get_matlab_engine,
     get_random_centroids,
     get_rewards,
 )
-from python.simulation.gui import FORMATIONS
-from python.utils import get_vertices
+from python.desktop.gui import FORMATIONS
+from python.desktop.utils import get_vertices
 
 
 def run_one_step(

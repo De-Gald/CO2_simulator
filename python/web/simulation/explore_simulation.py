@@ -6,7 +6,6 @@ from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel
 
 from python.db_client.mongo_client import MongoDBClient
-from python.plotting.plot_trapping_distribution import plot_trapping_distribution
 
 YEAR = 3600 * 24 * 365.2425
 KILOGRAM = 1000
@@ -80,7 +79,6 @@ def explore_simulation(
 
     _masses_np, t_np = _convert_to_np_arrays(masses_new, t)
     masses_np = _convert_masses_to_mega(_masses_np)
-    plot_trapping_distribution(masses_np, t_np, show_plot=show_plot)
 
     if mongo_client:
         result = {

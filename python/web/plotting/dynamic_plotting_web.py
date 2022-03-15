@@ -1,7 +1,12 @@
 from python.db_client.mongo_client import MongoDBClient
-from python.simulation.gui import FORMATIONS
-from python.plotting.plot_formation_web import plot_formation_web
+from python.web.plotting.plot_formation_web import plot_formation_web
 import plotly.graph_objects as go
+
+FORMATIONS = [
+    'Arefm', 'Bjarmelandfm', 'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Garnfm', 'Gassumfm', 'Ilefm',
+    'Johansenfm', 'Krossfjordfm', 'Nordmelafm', 'Pliocenesand', 'Sandnesfm', 'Skadefm', 'Sognefjordfm',
+    'Statfjordfm', 'Stofm', 'Tiljefm', 'Tubaenfm', 'Ulafm', 'Utsirafm'
+]
 
 
 def plot_well_locations_web(

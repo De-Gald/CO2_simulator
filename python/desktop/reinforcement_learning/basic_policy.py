@@ -1,12 +1,14 @@
-from typing import Dict, List, Optional, Tuple, Callable
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import matlab.engine
+from matplotlib import pyplot as plt
 
-from python.db_client.mongo_client import MongoDBClient
-from python.simulation.gui import FORMATIONS
-from python.plotting.dynamic_plotting_web import plot_well_locations_web
-from python.simulation.explore_simulation import explore_simulation
+from python.desktop.plotting.dynamic_plotting import plot_well_locations
+from python.desktop.plotting.plot_formation import plot_formation
+from python.desktop.simulation.explore_simulation import explore_simulation
+from python.desktop.gui import FORMATIONS
+from python.desktop.utils import get_vertices
 
 STRUCTURAL_RESIDUAL = 0
 RESIDUAL = 1
@@ -35,21 +37,19 @@ def basic_policy(
     return possible_locations[random_index]
 
 
-def run_basic_policy_web(
-    formation_graph_callback: Optional[Callable] = None,
-    trapping_graph_callback: Optional[Callable] = None,
-    stop_basic_well_location: Optional[list[any]] = None,
-    **simulation_parameters
+def run_basic_policy(
+    formation: str
 ) -> [List[int], List[Tuple[int]]]:
     masses = {}
     paths = []
     rewards_different_inits = []
 
     eng = get_matlab_engine()
-    formation = simulation_parameters['formation']
 
-    mongo_client = MongoDBClient('co2sim')
-    vertices = mongo_client.get_vertices(formation, 'faces')
+    plot_formation(formation)
+    plt.show()
+
+    vertices = get_vertices(formation, 'faces', 'vertices')
     random_centroids = get_random_centroids(vertices, CENTROIDS_COUNT)
 
     for episode_count, centroid in enumerate(random_centroids):
@@ -60,30 +60,27 @@ def run_basic_policy_web(
 
         for step in range(NUMBER_OF_WELLS):
             print(f'Step {step}')
+
             _list_of_5_locations = _get_list_of_5_locations(CELL_INCREMENT, masses, x, y)
             list_of_5_locations = list(filter(None, _list_of_5_locations))
             current_masses = {}
+
             for location in list_of_5_locations:
-                _masses, time = explore_simulation(
+                _masses, _ = explore_simulation(
                     location,
+                    show_plot=True,
                     eng=eng,
-                    **simulation_parameters
                 )
+
                 current_masses.update(
                     {
                         location: _masses
                     }
                 )
 
-                if trapping_graph_callback:
-                    trapping_graph_callback(_masses, time)
-
-                if stop_basic_well_location:
-                    return
-
             masses.update(current_masses)
-
             rewards = get_rewards(current_masses)
+
             if len(rewards) > 0:
                 print(rewards)
             else:
@@ -108,12 +105,7 @@ def run_basic_policy_web(
             rewards_different_inits.append(rewards_step)
         if path:
             paths.append(path)
-            plot_well_locations_web(
-                formation,
-                paths,
-                rewards_different_inits,
-                figure_callback=formation_graph_callback
-            )
+            plot_well_locations(formation, paths, rewards_different_inits)
     return rewards_different_inits, paths
 
 
@@ -126,11 +118,18 @@ def get_random_centroids(
     return random_centroids
 
 
+def get_centroids_x_y(
+    centroids: matlab.double
+) -> [List[float], List[float]]:
+    xs = [centroid[0] for centroid in centroids]
+    ys = [centroid[1] for centroid in centroids]
+    return xs, ys
+
+
 def get_matlab_engine() -> matlab.engine:
     eng = matlab.engine.start_matlab()
     eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
     eng.evalc("warning('off', 'all');")
-
     return eng
 
 
@@ -147,8 +146,8 @@ def get_rewards(
 def _get_list_of_5_locations(
     cell_increment: int,
     masses: Dict[str, np.array],
-    x: float,
-    y: float
+    x: int,
+    y: int
 ) -> List[Optional[Tuple[float, float]]]:
     return [
         (x, y)
@@ -175,4 +174,4 @@ def _get_possible_locations(
 
 
 if __name__ == '__main__':
-    run_basic_policy_web(FORMATIONS[13])
+    run_basic_policy(FORMATIONS[12])

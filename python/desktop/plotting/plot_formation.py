@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.collections import PolyCollection
 
-from python.utils import get_vertices, get_colors
+from python.desktop.utils import get_vertices, get_colors
 
 COLOUR_INTENSITY = 0.85
 
@@ -15,7 +15,7 @@ def plot_formation(
     show_well=False,
     use_trapping=False
 ) -> [plt.Figure, plt.axis]:
-    vertices_formation = get_vertices(formation, 'faces', 'vertices')
+    vertices_formation = get_vertices(formation, 'faces')
     colors_formation = get_colors(formation)
 
     fig, ax = plt.subplots()
@@ -38,7 +38,7 @@ def plot_formation(
     ax.add_collection(collection)
 
     if use_trapping:
-        vertices_trapping = get_vertices(formation, 'faces_trapping', 'vertices_trapping')
+        vertices_trapping = get_vertices(formation, 'faces_trapping')
         trapping_collection = PolyCollection(
             vertices_trapping,
             edgecolors='r',

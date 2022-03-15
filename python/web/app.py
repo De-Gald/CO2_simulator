@@ -12,14 +12,19 @@ import threading
 import pandas as pd
 
 from python.db_client.mongo_client import MongoDBClient
-from python.plotting.plot_trapping_distribution import LABELS
-from python.reinforcement_learning.basic_policy_web import run_basic_policy_web
-from python.reinforcement_learning.nn_policy_web import run_nn_policy_web
+from python.web.plotting.plot_trapping_distribution_web import LABELS
+from python.web.reinforcement_learning.basic_policy_web import run_basic_policy_web
+from python.web.reinforcement_learning.nn_policy_web import run_nn_policy_web
 
-from python.plotting.plot_formation_web import plot_formation_web
-from python.plotting.plot_trapping_distribution_web import plot_trapping_distribution
-from python.simulation.explore_simulation import explore_simulation, YEAR
-from python.simulation.gui import FORMATIONS
+from python.web.plotting.plot_formation_web import plot_formation_web
+from python.web.plotting.plot_trapping_distribution_web import plot_trapping_distribution
+from python.web.simulation.explore_simulation import explore_simulation, YEAR
+
+FORMATIONS = [
+    'Arefm', 'Bjarmelandfm', 'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Garnfm', 'Gassumfm', 'Ilefm',
+    'Johansenfm', 'Krossfjordfm', 'Nordmelafm', 'Pliocenesand', 'Sandnesfm', 'Skadefm', 'Sognefjordfm',
+    'Statfjordfm', 'Stofm', 'Tiljefm', 'Tubaenfm', 'Ulafm', 'Utsirafm'
+]
 
 OPTIONS = [
     {'label': formation, 'value': formation}

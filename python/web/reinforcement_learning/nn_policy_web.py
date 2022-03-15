@@ -6,14 +6,19 @@ from typing import List, Callable, Optional
 import json
 
 from python.db_client.mongo_client import MongoDBClient
-from python.simulation.gui import FORMATIONS
-from python.simulation.explore_simulation import explore_simulation
-from python.reinforcement_learning.basic_policy_web import (
+from python.web.simulation.explore_simulation import explore_simulation
+from python.web.reinforcement_learning.basic_policy_web import (
     get_matlab_engine,
     get_random_centroids,
     get_rewards,
 )
-from python.plotting.dynamic_plotting_web import plot_well_locations_web
+from python.web.plotting.dynamic_plotting_web import plot_well_locations_web
+
+FORMATIONS = [
+    'Arefm', 'Bjarmelandfm', 'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Garnfm', 'Gassumfm', 'Ilefm',
+    'Johansenfm', 'Krossfjordfm', 'Nordmelafm', 'Pliocenesand', 'Sandnesfm', 'Skadefm', 'Sognefjordfm',
+    'Statfjordfm', 'Stofm', 'Tiljefm', 'Tubaenfm', 'Ulafm', 'Utsirafm'
+]
 
 
 def run_one_step(

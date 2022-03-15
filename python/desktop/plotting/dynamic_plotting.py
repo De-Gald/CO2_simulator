@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from python.simulation.gui import FORMATIONS, plot_formation
+from python.desktop.gui import FORMATIONS, plot_formation
 
 WELL_LOCS = [[(909200.42896692, 7961347.201625), (909200.42896692, 7963347.201625), (911200.42896692, 7963347.201625),
               (911200.42896692, 7965347.201625), (911200.42896692, 7967347.201625), (911200.42896692, 7965347.201625),
