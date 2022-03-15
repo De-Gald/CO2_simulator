@@ -7,7 +7,7 @@ class MongoDBClient:
         self,
         db: str
     ) -> None:
-        self.client = MongoClient()
+        self.client = MongoClient('mongodb://mongodb:27017')
         self.db = self.client[db]
 
     def get_vertices(

@@ -13,12 +13,13 @@ import pandas as pd
 
 from python.db_client.mongo_client import MongoDBClient
 from python.web.plotting.plot_trapping_distribution_web import LABELS
-from python.web.reinforcement_learning.basic_policy_web import run_basic_policy_web
-from python.web.reinforcement_learning.nn_policy_web import run_nn_policy_web
+# from python.web.reinforcement_learning.basic_policy_web import run_basic_policy_web
+# from python.web.reinforcement_learning.nn_policy_web import run_nn_policy_web
 
 from python.web.plotting.plot_formation_web import plot_formation_web
 from python.web.plotting.plot_trapping_distribution_web import plot_trapping_distribution
-from python.web.simulation.explore_simulation import explore_simulation, YEAR
+
+# from python.web.simulation.explore_simulation import explore_simulation, YEAR
 
 FORMATIONS = [
     'Arefm', 'Bjarmelandfm', 'Brentgrp', 'Brynefm', 'Fensfjordfm', 'Garnfm', 'Gassumfm', 'Ilefm',
@@ -251,234 +252,234 @@ app.layout = dbc.Container(
 )
 
 
-@app.callback(
-    [
-        Output('trapping_graph', 'figure'),
-        Output('download_simulation_results', 'data'),
-        Output('formation_updater', 'disabled'),
-        Output('trapping_graph_updater', 'disabled'),
-        Output('simulation', 'n_clicks_timestamp'),
-        Output('smart_well_location', 'color'),
-        Output('smart_well_location', 'n_clicks_timestamp'),
-        Output('basic_well_location', 'color'),
-        Output('basic_well_location', 'n_clicks_timestamp'),
-        Output('local_trapping', 'clear_data')
-    ],
-    [
-        Input('simulation', 'n_clicks_timestamp'),
-        Input('smart_well_location', 'n_clicks_timestamp'),
-        Input('basic_well_location', 'n_clicks_timestamp'),
-        Input('local_trapping', 'data')
-    ],
-    [
-        State('formation_dropdown', 'value'),
-        State('injection_rate', 'value'),
-        State('injection_period', 'value'),
-        State('injection_time_steps', 'value'),
-        State('migration_period', 'value'),
-        State('migration_time_steps', 'value'),
-        State('seafloor_depth', 'value'),
-        State('seafloor_temperature', 'value'),
-        State('water_residual', 'value'),
-        State('co2_residual', 'value'),
-        State('download_checkbox', 'value')
-    ],
-    prevent_initial_call=True
-)
-def run_simulation(
-    simulation: float,
-    smart_well_location: float,
-    basic_well_location: float,
-    figure_dict: dict[str, any],
-    formation: str,
-    injection_rate: int,
-    injection_period: int,
-    injection_time_steps: int,
-    migration_period: int,
-    migration_time_steps: int,
-    seafloor_depth: float,
-    seafloor_temperature: float,
-    water_residual: float,
-    co2_residual: float,
-    download_checkbox: list[str]
-) -> [go.Figure, bool]:
-    button_pressed = np.argmax(
-        np.array(
-            [
-                0,
-                float(simulation),
-                float(smart_well_location),
-                float(basic_well_location)
-            ]
-        )
-    )
+# @app.callback(
+#     [
+#         Output('trapping_graph', 'figure'),
+#         Output('download_simulation_results', 'data'),
+#         Output('formation_updater', 'disabled'),
+#         Output('trapping_graph_updater', 'disabled'),
+#         Output('simulation', 'n_clicks_timestamp'),
+#         Output('smart_well_location', 'color'),
+#         Output('smart_well_location', 'n_clicks_timestamp'),
+#         Output('basic_well_location', 'color'),
+#         Output('basic_well_location', 'n_clicks_timestamp'),
+#         Output('local_trapping', 'clear_data')
+#     ],
+#     [
+#         Input('simulation', 'n_clicks_timestamp'),
+#         Input('smart_well_location', 'n_clicks_timestamp'),
+#         Input('basic_well_location', 'n_clicks_timestamp'),
+#         Input('local_trapping', 'data')
+#     ],
+#     [
+#         State('formation_dropdown', 'value'),
+#         State('injection_rate', 'value'),
+#         State('injection_period', 'value'),
+#         State('injection_time_steps', 'value'),
+#         State('migration_period', 'value'),
+#         State('migration_time_steps', 'value'),
+#         State('seafloor_depth', 'value'),
+#         State('seafloor_temperature', 'value'),
+#         State('water_residual', 'value'),
+#         State('co2_residual', 'value'),
+#         State('download_checkbox', 'value')
+#     ],
+#     prevent_initial_call=True
+# )
+# def run_simulation(
+#     simulation: float,
+#     smart_well_location: float,
+#     basic_well_location: float,
+#     figure_dict: dict[str, any],
+#     formation: str,
+#     injection_rate: int,
+#     injection_period: int,
+#     injection_time_steps: int,
+#     migration_period: int,
+#     migration_time_steps: int,
+#     seafloor_depth: float,
+#     seafloor_temperature: float,
+#     water_residual: float,
+#     co2_residual: float,
+#     download_checkbox: list[str]
+# ) -> [go.Figure, bool]:
+#     button_pressed = np.argmax(
+#         np.array(
+#             [
+#                 0,
+#                 float(simulation),
+#                 float(smart_well_location),
+#                 float(basic_well_location)
+#             ]
+#         )
+#     )
+#
+#     if button_pressed == 1:
+#         masses, time = explore_simulation(
+#             current_well_loc,
+#             formation=formation,
+#             default_rate=injection_rate,
+#             inj_time=injection_period * YEAR,
+#             inj_steps=injection_time_steps,
+#             mig_time=migration_period * YEAR,
+#             mig_steps=migration_time_steps,
+#             seafloor_depth=seafloor_depth,
+#             seafloor_temp=seafloor_temperature,
+#             water_residual=water_residual,
+#             co2_residual=co2_residual,
+#             mongo_client=MONGO_CLIENT
+#         )
+#         output = plot_trapping_distribution(masses, time)
+#
+#         download = dash.no_update
+#         if download_checkbox:
+#             download = _create_download_csv(masses, time)
+#
+#         return (
+#             output,
+#             download,
+#             dash.no_update,
+#             dash.no_update,
+#             0,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#         )
+#
+#     elif button_pressed == 2:
+#         global run_smart_well_location
+#         global stop_smart_well_location
+#
+#         run_smart_well_location = bool((run_smart_well_location + 1) % 2)
+#
+#         if run_smart_well_location:
+#             trapping_graph = dash.no_update
+#             local_trapping = False
+#
+#             reset_formation_graph()
+#             reset_trapping_graph()
+#             stop_smart_well_location.pop()
+#
+#             smart_well_location_thread = threading.Thread(
+#                 target=run_nn_policy_web,
+#                 name='smart_well_location',
+#                 kwargs={
+#                     'formation': formation,
+#                     'formation_graph_callback': set_formation_graph_callback,
+#                     'trapping_graph_callback': set_trapping_graph_callback,
+#                     'stop_smart_well_location': stop_smart_well_location,
+#                     'default_rate': injection_rate,
+#                     'inj_time': injection_period * YEAR,
+#                     'inj_steps': injection_time_steps,
+#                     'mig_time': migration_period * YEAR,
+#                     'mig_steps': migration_time_steps,
+#                     'seafloor_depth': seafloor_depth,
+#                     'seafloor_temp': seafloor_temperature,
+#                     'water_residual': water_residual,
+#                     'co2_residual': co2_residual,
+#                     'mongo_client': MONGO_CLIENT
+#                 }
+#             )
+#             smart_well_location_thread.start()
+#         else:
+#             stop_smart_well_location.append(True)
+#             reset_formation_graph()
+#             reset_trapping_graph()
+#             trapping_graph = 'Empty graph'
+#             local_trapping = True
+#
+#         return (
+#             trapping_graph,
+#             dash.no_update,
+#             not run_smart_well_location,
+#             not run_smart_well_location,
+#             dash.no_update,
+#             COLORS[not run_smart_well_location],
+#             0,
+#             dash.no_update,
+#             dash.no_update,
+#             local_trapping
+#         )
+#
+#     elif button_pressed == 3:
+#         global run_basic_well_location
+#         global stop_basic_well_location
+#
+#         run_basic_well_location = bool((run_basic_well_location + 1) % 2)
+#
+#         if run_basic_well_location:
+#             trapping_graph = dash.no_update
+#             local_trapping = False
+#
+#             reset_formation_graph()
+#             reset_trapping_graph()
+#             stop_basic_well_location.pop()
+#
+#             basic_well_location_thread = threading.Thread(
+#                 target=run_basic_policy_web,
+#                 name='basic_well_location',
+#                 kwargs={
+#                     'formation': formation,
+#                     'formation_graph_callback': set_formation_graph_callback,
+#                     'trapping_graph_callback': set_trapping_graph_callback,
+#                     'stop_basic_well_location': stop_basic_well_location,
+#                     'default_rate': injection_rate,
+#                     'inj_time': injection_period * YEAR,
+#                     'inj_steps': injection_time_steps,
+#                     'mig_time': migration_period * YEAR,
+#                     'mig_steps': migration_time_steps,
+#                     'seafloor_depth': seafloor_depth,
+#                     'seafloor_temp': seafloor_temperature,
+#                     'water_residual': water_residual,
+#                     'co2_residual': co2_residual
+#                 }
+#             )
+#             basic_well_location_thread.start()
+#         else:
+#             stop_basic_well_location.append(True)
+#             reset_formation_graph()
+#             reset_trapping_graph()
+#             trapping_graph = 'Empty graph'
+#             local_trapping = True
+#
+#         return (
+#             trapping_graph,
+#             dash.no_update,
+#             not run_basic_well_location,
+#             not run_basic_well_location,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             COLORS[not run_basic_well_location],
+#             0,
+#             local_trapping
+#         )
+#
+#     if figure_dict:
+#         return (
+#             go.Figure(**figure_dict),
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update,
+#             dash.no_update
+#         )
+#     else:
+#         raise PreventUpdate
 
-    if button_pressed == 1:
-        masses, time = explore_simulation(
-            current_well_loc,
-            formation=formation,
-            default_rate=injection_rate,
-            inj_time=injection_period * YEAR,
-            inj_steps=injection_time_steps,
-            mig_time=migration_period * YEAR,
-            mig_steps=migration_time_steps,
-            seafloor_depth=seafloor_depth,
-            seafloor_temp=seafloor_temperature,
-            water_residual=water_residual,
-            co2_residual=co2_residual,
-            mongo_client=MONGO_CLIENT
-        )
-        output = plot_trapping_distribution(masses, time)
 
-        download = dash.no_update
-        if download_checkbox:
-            download = _create_download_csv(masses, time)
-
-        return (
-            output,
-            download,
-            dash.no_update,
-            dash.no_update,
-            0,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-        )
-
-    elif button_pressed == 2:
-        global run_smart_well_location
-        global stop_smart_well_location
-
-        run_smart_well_location = bool((run_smart_well_location + 1) % 2)
-
-        if run_smart_well_location:
-            trapping_graph = dash.no_update
-            local_trapping = False
-
-            reset_formation_graph()
-            reset_trapping_graph()
-            stop_smart_well_location.pop()
-
-            smart_well_location_thread = threading.Thread(
-                target=run_nn_policy_web,
-                name='smart_well_location',
-                kwargs={
-                    'formation': formation,
-                    'formation_graph_callback': set_formation_graph_callback,
-                    'trapping_graph_callback': set_trapping_graph_callback,
-                    'stop_smart_well_location': stop_smart_well_location,
-                    'default_rate': injection_rate,
-                    'inj_time': injection_period * YEAR,
-                    'inj_steps': injection_time_steps,
-                    'mig_time': migration_period * YEAR,
-                    'mig_steps': migration_time_steps,
-                    'seafloor_depth': seafloor_depth,
-                    'seafloor_temp': seafloor_temperature,
-                    'water_residual': water_residual,
-                    'co2_residual': co2_residual,
-                    'mongo_client': MONGO_CLIENT
-                }
-            )
-            smart_well_location_thread.start()
-        else:
-            stop_smart_well_location.append(True)
-            reset_formation_graph()
-            reset_trapping_graph()
-            trapping_graph = 'Empty graph'
-            local_trapping = True
-
-        return (
-            trapping_graph,
-            dash.no_update,
-            not run_smart_well_location,
-            not run_smart_well_location,
-            dash.no_update,
-            COLORS[not run_smart_well_location],
-            0,
-            dash.no_update,
-            dash.no_update,
-            local_trapping
-        )
-
-    elif button_pressed == 3:
-        global run_basic_well_location
-        global stop_basic_well_location
-
-        run_basic_well_location = bool((run_basic_well_location + 1) % 2)
-
-        if run_basic_well_location:
-            trapping_graph = dash.no_update
-            local_trapping = False
-
-            reset_formation_graph()
-            reset_trapping_graph()
-            stop_basic_well_location.pop()
-
-            basic_well_location_thread = threading.Thread(
-                target=run_basic_policy_web,
-                name='basic_well_location',
-                kwargs={
-                    'formation': formation,
-                    'formation_graph_callback': set_formation_graph_callback,
-                    'trapping_graph_callback': set_trapping_graph_callback,
-                    'stop_basic_well_location': stop_basic_well_location,
-                    'default_rate': injection_rate,
-                    'inj_time': injection_period * YEAR,
-                    'inj_steps': injection_time_steps,
-                    'mig_time': migration_period * YEAR,
-                    'mig_steps': migration_time_steps,
-                    'seafloor_depth': seafloor_depth,
-                    'seafloor_temp': seafloor_temperature,
-                    'water_residual': water_residual,
-                    'co2_residual': co2_residual
-                }
-            )
-            basic_well_location_thread.start()
-        else:
-            stop_basic_well_location.append(True)
-            reset_formation_graph()
-            reset_trapping_graph()
-            trapping_graph = 'Empty graph'
-            local_trapping = True
-
-        return (
-            trapping_graph,
-            dash.no_update,
-            not run_basic_well_location,
-            not run_basic_well_location,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            COLORS[not run_basic_well_location],
-            0,
-            local_trapping
-        )
-
-    if figure_dict:
-        return (
-            go.Figure(**figure_dict),
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update,
-            dash.no_update
-        )
-    else:
-        raise PreventUpdate
-
-
-def _create_download_csv(
-    masses: np.array,
-    time: np.array
-) -> dict[str, any]:
-    df = pd.DataFrame(masses, columns=time // YEAR, index=LABELS)
-    return dcc.send_data_frame(df.to_csv, "masses.csv")
+# def _create_download_csv(
+#     masses: np.array,
+#     time: np.array
+# ) -> dict[str, any]:
+#     df = pd.DataFrame(masses, columns=time // YEAR, index=LABELS)
+#     return dcc.send_data_frame(df.to_csv, "masses.csv")
 
 
 @app.callback(
@@ -608,4 +609,4 @@ def set_trapping_graph_callback(
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=False, host='0.0.0.0', port=8080)
