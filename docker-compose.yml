@@ -1,11 +1,11 @@
 version: '3'
 services:
   mongodb:
-    image: mongo
+    image: mongo:latest
     ports:
       - '27017:27017'
   co2sim:
-    image: co2sim
+    build: .
     ports:
       - '8080:8080'
     depends_on:
