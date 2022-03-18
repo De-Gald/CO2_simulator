@@ -1,4 +1,5 @@
-FROM python:3.9-slim
+FROM docker.io/gnuoctave/octave:6.4.0
+USER root
 COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 COPY . ./

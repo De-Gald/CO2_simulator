@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import oct2py
 import numpy as np
@@ -45,11 +45,11 @@ class InitialParameters(BaseModel):
     use_dissolution: bool = False
     use_trapping: bool = False
     use_cap_fringe: bool = False
-    well_position: tuple[float, float] = None
+    well_position: Tuple[float, float] = None
 
 
 def explore_simulation(
-    well_pos: tuple[float, float],
+    well_pos: Tuple[float, float],
     mongo_client: Optional[MongoDBClient] = None,
     show_plot=False,
     eng=None,

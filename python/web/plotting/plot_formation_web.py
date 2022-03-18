@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple, Dict, List
 
 import plotly.graph_objects as go
 from matplotlib import cm
@@ -12,9 +12,9 @@ COLOUR_INTENSITY = 0.85
 def plot_formation_web(
     formation: str,
     mongo_client: MongoDBClient,
-    marker: Optional[tuple[float, float]] = None,
+    marker: Optional[Tuple[float, float]] = None,
     use_trapping=False,
-    current_figure: Optional[dict[str, any]] = None
+    current_figure: Optional[Dict[str, any]] = None
 ) -> go.Figure:
     if current_figure:
         fig = go.Figure(**current_figure)
@@ -106,11 +106,11 @@ def plot_formation_web(
 
 def _add_trace(
     figure: go.Figure,
-    x: list[float],
-    y: list[float],
+    x: List[float],
+    y: List[float],
     i: int,
-    marker: dict[str, any],
-    fillcolor: tuple[int, int, int]
+    marker: Dict[str, any],
+    fillcolor: Tuple[int, int, int]
 ) -> None:
     figure.add_trace(
         go.Scatter(
@@ -128,7 +128,7 @@ def _add_trace(
 
 def _convert_vertices_to_x_y_arrays(
     vertices
-) -> [list[list[any]], list[list[any]]]:
+) -> [List[List[any]], List[List[any]]]:
     xs = []
     ys = []
     for figure in vertices:

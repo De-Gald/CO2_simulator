@@ -1,8 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-import matlab.engine
-from typing import List, Callable, Optional
+from typing import List, Callable, Optional, Dict
 import json
 
 from python.db_client.mongo_client import MongoDBClient
@@ -27,10 +26,10 @@ def run_one_step(
     masses: np.array,
     model: keras.models.Sequential,
     loss_fn: keras.losses.binary_crossentropy,
-    eng: matlab.engine,
+    eng: any,
     mongo_client: MongoDBClient,
     trapping_graph_callback: Optional[Callable] = None,
-    simulation_parameters: Optional[dict[str, any]] = None
+    simulation_parameters: Optional[Dict[str, any]] = None
 ) -> [float, float, np.array, int, bool, List[tf.Tensor]]:
     with tf.GradientTape() as tape:
         probas = model(masses[np.newaxis])
@@ -81,8 +80,8 @@ def run_multiple_episodes(
     loss_fn: keras.losses,
     formation_graph_callback: Optional[Callable] = None,
     trapping_graph_callback: Optional[Callable] = None,
-    stop_smart_well_location: Optional[list[any]] = None,
-    simulation_parameters: Optional[dict[str, any]] = None
+    stop_smart_well_location: Optional[List[any]] = None,
+    simulation_parameters: Optional[Dict[str, any]] = None
 ) -> [List[List[int]], List[List[float]]]:
     iteration_rewards = []
     iteration_grads = []
@@ -179,7 +178,7 @@ def run_nn_policy_web(
     mongo_client: MongoDBClient,
     formation_graph_callback: Optional[Callable] = None,
     trapping_graph_callback: Optional[Callable] = None,
-    stop_smart_well_location: Optional[list[any]] = None,
+    stop_smart_well_location: Optional[List[any]] = None,
     load_last_model=True,
     **kwargs
 ) -> None:

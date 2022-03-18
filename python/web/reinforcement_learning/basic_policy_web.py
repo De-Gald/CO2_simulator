@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Tuple, Callable
 
 import numpy as np
-import matlab.engine
+import oct2py
 
 from python.db_client.mongo_client import MongoDBClient
 from python.web.plotting.dynamic_plotting_web import plot_well_locations_web
@@ -43,7 +43,7 @@ def basic_policy(
 def run_basic_policy_web(
     formation_graph_callback: Optional[Callable] = None,
     trapping_graph_callback: Optional[Callable] = None,
-    stop_basic_well_location: Optional[list[any]] = None,
+    stop_basic_well_location: Optional[List[any]] = None,
     **simulation_parameters
 ) -> [List[int], List[Tuple[int]]]:
     masses = {}
@@ -125,16 +125,16 @@ def run_basic_policy_web(
 def get_random_centroids(
     vertices: np.array,
     centroids_count: int
-) -> List[matlab.double]:
+) -> list:
     random_indices = np.random.choice(len(vertices), centroids_count, replace=False)
     random_centroids = [vertices[idx].mean(axis=0).tolist() for idx in random_indices]
     return random_centroids
 
 
-def get_matlab_engine() -> matlab.engine:
-    eng = matlab.engine.start_matlab()
-    eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
-    eng.evalc("warning('off', 'all');")
+def get_matlab_engine() -> oct2py.Oct2Py:
+    eng = oct2py.Oct2Py()
+    eng.addpath(eng.genpath('/octave'))
+    eng.warning('off', 'all')
 
     return eng
 

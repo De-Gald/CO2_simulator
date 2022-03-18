@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Optional, Tuple
 
-import matlab.engine
+import oct2py
 import numpy as np
 from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel
@@ -44,20 +44,19 @@ class InitialParameters(BaseModel):
     use_dissolution: bool = False
     use_trapping: bool = False
     use_cap_fringe: bool = False
-    well_position: tuple[float, float] = None
+    well_position: Tuple[float, float] = None
 
 
 def explore_simulation(
-    well_pos: tuple[float, float],
+    well_pos: Tuple[float, float],
     mongo_client: Optional[MongoDBClient] = None,
-    show_plot=False,
     eng=None,
     **kwargs
 ) -> (np.array, np.array):
     if not eng:
-        eng = matlab.engine.start_matlab()
-        eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
-        eng.evalc("warning('off', 'all');")
+        eng = oct2py.Oct2Py()
+        eng.addpath(eng.genpath('/home/jovyan/octave'))
+        eng.warning('off', 'all')
 
     initial_parameters = InitialParameters(**kwargs)
 
@@ -72,10 +71,7 @@ def explore_simulation(
 
     initial_parameters.well_position = well_pos
 
-    eng.workspace['initial_parameters'] = initial_parameters.dict()
-    masses_new, t, sol, w = eng.eval(
-        'get_simulation_results(initial_parameters);', nargout=4
-    )
+    masses_new, t, sol, w = eng.get_simulation_results(initial_parameters.dict(), nout=4)
 
     _masses_np, t_np = _convert_to_np_arrays(masses_new, t)
     masses_np = _convert_masses_to_mega(_masses_np)
@@ -111,11 +107,11 @@ def _convert_to_np_arrays(
     masses: np.array,
     t: np.array
 ) -> (np.array, np.array):
-    t_np = np.array(t)
-    _masses_np = np.array(masses)
+    t_np = np.array(t).flatten().astype(float)
+    _masses_np = np.array(list(masses[0]))
     masses_np = _masses_np.reshape((len(_masses_np), len(_masses_np[0, 0])))
     return masses_np, t_np
 
 
 if __name__ == '__main__':
-    explore_simulation((487000.0, 6721000.0), show_plot=True)
+    explore_simulation((487000.0, 6721000.0))
