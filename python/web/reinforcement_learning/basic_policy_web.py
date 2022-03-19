@@ -115,6 +115,7 @@ def run_basic_policy_web(
             paths.append(path)
             plot_well_locations_web(
                 formation,
+                mongo_client,
                 paths,
                 rewards_different_inits,
                 figure_callback=formation_graph_callback
@@ -133,7 +134,7 @@ def get_random_centroids(
 
 def get_matlab_engine() -> oct2py.Oct2Py:
     eng = oct2py.Oct2Py()
-    eng.addpath(eng.genpath('/octave'))
+    eng.addpath(eng.genpath('/home/jovyan/octave'))
     eng.warning('off', 'all')
 
     return eng

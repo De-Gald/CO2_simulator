@@ -4,6 +4,12 @@ services:
     image: mongo:latest
     ports:
       - '27017:27017'
+
+  mongo_data:
+    build: ./mongo_data
+    links:
+    - mongodb
+
   co2sim:
     build: .
     ports:
