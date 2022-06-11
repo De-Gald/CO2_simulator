@@ -1,8 +1,8 @@
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-import matlab.engine
 from matplotlib import pyplot as plt
+import oct2py
 
 from python.desktop.plotting.dynamic_plotting import plot_well_locations
 from python.desktop.plotting.plot_formation import plot_formation
@@ -46,10 +46,10 @@ def run_basic_policy(
 
     eng = get_matlab_engine()
 
-    plot_formation(formation)
+    plot_formation(formation, use_trapping=True)
     plt.show()
 
-    vertices = get_vertices(formation, 'faces', 'vertices')
+    vertices = get_vertices(formation, 'faces')
     random_centroids = get_random_centroids(vertices, CENTROIDS_COUNT)
 
     for episode_count, centroid in enumerate(random_centroids):
@@ -112,24 +112,25 @@ def run_basic_policy(
 def get_random_centroids(
     vertices: np.array,
     centroids_count: int
-) -> List[matlab.double]:
+) -> list:
     random_indices = np.random.choice(len(vertices), centroids_count, replace=False)
     random_centroids = [vertices[idx].mean(axis=0).tolist() for idx in random_indices]
     return random_centroids
 
 
 def get_centroids_x_y(
-    centroids: matlab.double
+    centroids
 ) -> [List[float], List[float]]:
     xs = [centroid[0] for centroid in centroids]
     ys = [centroid[1] for centroid in centroids]
     return xs, ys
 
 
-def get_matlab_engine() -> matlab.engine:
-    eng = matlab.engine.start_matlab()
+def get_matlab_engine() -> oct2py.Oct2Py:
+    eng = oct2py.Oct2Py()
     eng.addpath(eng.genpath('/Users/vladislavde-gald/PycharmProjects/CO2_simulator'))
-    eng.evalc("warning('off', 'all');")
+    eng.warning('off', 'all')
+
     return eng
 
 
@@ -174,4 +175,4 @@ def _get_possible_locations(
 
 
 if __name__ == '__main__':
-    run_basic_policy(FORMATIONS[12])
+    run_basic_policy(FORMATIONS[16])

@@ -2,7 +2,6 @@ import tensorflow as tf
 from matplotlib import pyplot as plt
 from tensorflow import keras
 import numpy as np
-import matlab.engine
 from typing import List
 
 from python.desktop.plotting.dynamic_plotting import plot_well_locations
@@ -23,7 +22,7 @@ def run_one_step(
     masses: np.array,
     model: keras.models.Sequential,
     loss_fn: keras.losses.binary_crossentropy,
-    eng: matlab.engine
+    eng
 ) -> [float, float, np.array, int, bool, List[tf.Tensor]]:
     with tf.GradientTape() as tape:
         probas = model(masses[np.newaxis])
@@ -70,10 +69,10 @@ def run_multiple_episodes(
 
     eng = get_matlab_engine()
 
-    plot_formation(formation)
+    plot_formation(formation, use_trapping=True)
     plt.show()
 
-    vertices = get_vertices(formation, 'faces', 'vertices')
+    vertices = get_vertices(formation, 'faces')
     random_centroids = get_random_centroids(vertices, n_episodes)
 
     for centroid in random_centroids:
@@ -187,4 +186,4 @@ def run_nn_policy(formation: str) -> None:
 
 
 if __name__ == '__main__':
-    run_nn_policy(FORMATIONS[12])
+    run_nn_policy(FORMATIONS[16])

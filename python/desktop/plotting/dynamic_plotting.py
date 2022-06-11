@@ -13,7 +13,7 @@ def plot_well_locations(
     well_locs=None,
     rewards=None
 ) -> None:
-    _, ax = plot_formation(formation)
+    _, ax = plot_formation(formation, use_trapping=True)
     well_x = []
     well_y = []
     wells_for_annotation = []
