@@ -22,7 +22,11 @@ def plot_trapping_distribution(
     t_np: np.array,
     show_plot=False
 ) -> None:
-    t_years = t_np // YEAR
+    try:
+        t_years = t_np // YEAR
+    except TypeError:
+        print('Only numpy arrays are allowed!!!')
+        raise
 
     if show_plot:
         color_map = ['#2BBD00', '#97A5FF', '#9FFF59', '#FFF51D', '#FE9B49', '#D90000']

@@ -19,6 +19,10 @@ FORMATIONS = [
 ]
 
 
+class WrongWellLocationException(Exception):
+    pass
+
+
 class InitialParameters(BaseModel):
     formation: str = 'Stofm'
     rho_cref: float = 760.0
@@ -61,6 +65,9 @@ def explore_simulation(
         eng.warning('off', 'all')
 
     initial_parameters = InitialParameters(**kwargs)
+
+    if well_pos[0] < 0 or well_pos[1] < 0:
+        raise WrongWellLocationException
 
     if mongo_client:
         result = mongo_client.db.results.find_one({
