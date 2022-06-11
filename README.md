@@ -1,4 +1,4 @@
-# CO2_simulator
+# CO2 simulator
 Reservoir Simulator for long-term study of CO2 storage
 
 ## Installation on MacOS
