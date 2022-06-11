@@ -16,7 +16,8 @@ pip install -r requirements.txt
 6.	Install GNU Octave:
 brew install octave
 7. Run tests:
-python -m unittest
+python -m unittest discover -s python/desktop/plotting -p '*_tests.py'
+python -m unittest discover -s python/desktop/simulation -p '*_tests.py'
 8.	Run the following command:
 python gui.py
 9.	Set the initial parameters and run the simulator in required mode.
@@ -36,7 +37,8 @@ pip install -r requirements.txt
 6.	Download and install GNU Octave:
 https://ftpmirror.gnu.org/octave/windows/octave-6.4.0-w64-installer.exe
 7. Run tests:
-python -m unittest
+python -m unittest discover -s python/desktop/plotting -p '*_tests.py'
+python -m unittest discover -s python/desktop/simulation -p '*_tests.py'
 8.	Run the following command:
 python gui.py
 9.	Set the initial parameters and run the simulator in required mode.
